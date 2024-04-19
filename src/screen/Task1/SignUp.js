@@ -14,7 +14,7 @@ import {
   Color,
   Padding,
   StyleVariable,
-} from "../GlobalStyles";
+} from "../../GlobalStyles";
 
 const SignUp = () => {
   const navigation = useNavigation();
@@ -22,30 +22,12 @@ const SignUp = () => {
   return (
     <ScrollView style={styles.form} contentContainerStyle={styles.formContent}>
       <Text style={styles.title}>Welcome to HappyFam!</Text>
-      <IconButton
-        icon="camera"
-        mode="contained"
-        style={styles.fabDefault}
-        contentStyle={styles.fABDefaultBtn}
-      />
+      <IconButton icon="camera" mode="contained" style={styles.fab} />
       <View style={styles.credestials}>
+        <TextInput label="First name" mode="outlined" />
+        <TextInput label="Last name" mode="outlined" />
+        <TextInput label="Email" mode="outlined" />
         <TextInput
-          style={styles.textFieldOutlined}
-          label="First name"
-          mode="outlined"
-        />
-        <TextInput
-          style={styles.textFieldOutlined}
-          label="Last name"
-          mode="outlined"
-        />
-        <TextInput
-          style={styles.textFieldOutlined}
-          label="Email"
-          mode="outlined"
-        />
-        <TextInput
-          style={styles.textFieldOutlined}
           label="Password"
           mode="outlined"
           secureTextEntry={true}
@@ -53,22 +35,17 @@ const SignUp = () => {
         />
       </View>
       <Button
-        style={[styles.buttonDefault, styles.barFlexBox]}
+        style={styles.button}
         uppercase={true}
         mode="contained"
-        labelStyle={styles.buttonDefaultBtn}
-        contentStyle={styles.buttonDefaultBtn1}
+        contentStyle={styles.buttonContent}
       >
         Create account
       </Button>
-      <View style={[styles.descriptionParent, styles.barFlexBox]}>
-        <Text style={[styles.description, styles.logInTypo]} numberOfLines={1}>
-          Already have an account?
-        </Text>
+      <View style={styles.descriptionParent}>
+        <Text style={styles.logInTypo}>Already have an account?</Text>
         <TouchableOpacity
-          style={styles.description1}
-          numberOfLines={1}
-          activeOpacity={0.2}
+          style={{ marginLeft: 5 }}
           onPress={() => navigation.navigate("LogIn")}
         >
           <Text style={[styles.logIn, styles.logInTypo]}>Log in</Text>
@@ -79,67 +56,19 @@ const SignUp = () => {
 };
 
 const styles = StyleSheet.create({
-  fABDefaultBtn: {
-    padding: 16,
-  },
-  buttonDefaultBtn: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
-    fontFamily: "Roboto-Medium",
-  },
-  buttonDefaultBtn1: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  formContent: {
-    paddingHorizontal: 10,
-    alignItems: "center",
-  },
-  logInTypo: {
-    fontFamily: FontFamily.materialThemeDisplayLarge,
-    lineHeight: 24,
-    letterSpacing: 1,
-    fontSize: FontSize.figmaKitKitBody_size,
-    textAlign: "center",
-  },
-  title: {
-    fontSize: FontSize.materialThemeHeadlineSmall_size,
-  },
-  fabDefault: {
-    marginTop: 20,
-  },
-  textFieldOutlined: {
-    alignSelf: "stretch",
-  },
-  credestials: {
-    marginTop: 20,
-    alignSelf: "stretch",
-    alignItems: "center",
-  },
-  buttonDefault: {
+  buttonContent: { paddingHorizontal: 24, paddingVertical: 12 },
+  formContent: { paddingHorizontal: 10, alignItems: "center" },
+  logInTypo: { letterSpacing: 1, fontSize: FontSize.figmaKitKitBody_size },
+  title: { fontSize: FontSize.materialThemeHeadlineSmall_size },
+  fab: { marginTop: 20 },
+  credestials: { marginTop: 20, alignSelf: "stretch" },
+  button: {
     minWidth: StyleVariable.accessibilityMinBtnWidth,
     minHeight: StyleVariable.accessibilityMinTargetSize,
     marginTop: 20,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignSelf: "stretch",
   },
-  description: {
-    color: Color.materialThemeSysLightOnSurfaceVariant,
-  },
-  logIn: {
-    color: Color.colorDarkturquoise,
-  },
-  description1: {
-    marginLeft: 5,
-  },
-  descriptionParent: {
-    marginTop: 20,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignSelf: "stretch",
-  },
+  logIn: { color: Color.colorDarkturquoise },
+  descriptionParent: { marginTop: 20, flexDirection: "row" },
   form: { marginTop: 20 },
 });
 

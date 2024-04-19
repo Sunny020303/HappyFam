@@ -15,7 +15,7 @@ function Home({ navigation }) {
       <View style={styles.ButtonContainer}>
         <Button
           title="Login"
-          onPress={() => navigation.navigate("Login")}
+          onPress={() => navigation.navigate("LogIn")}
         ></Button>
       </View>
       <View style={styles.ButtonContainer}>
@@ -60,7 +60,7 @@ function App() {
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="Login" component={LogIn} />
+        <Stack.Screen name="LogIn" component={LogIn} />
         <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="Calendar" component={Calendar} />
         <Stack.Screen name="Activity" component={Activity} />
