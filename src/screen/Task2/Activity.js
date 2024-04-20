@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, ScrollView, Text, View, Image } from "react-native";
+import { StyleSheet, ScrollView, Text, View, Image, ToastAndroid } from "react-native";
 import {
   Avatar,
   Button,
@@ -8,7 +8,8 @@ import {
   TextInput,
   TouchableRipple,
   Icon,
-  Switch
+  Switch,
+  RadioButton,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { FontSize, Color, StyleVariable } from "../../GlobalStyles";
@@ -19,8 +20,14 @@ export default function Activity() {
   const [title, setTitle] = useState("");
   const [withWho, setWithWho] = useState("Everyone");
   const [visible, setVisible] = useState("Everyone");
+  //repeat
   const [repeat, setRepeat] = useState(null);
-  const [remind, seRemind] = useState("");
+  const [repeatToggle, setRepeatToggle] = useState(false);
+  //remind
+  const [remind, setRemind] = useState("No reminder");
+  const [remindToggle, setRemindToggle] = useState(false);
+
+  //location
   const [location, setLocation] = useState(null);
   const [note, setNote] = useState("");
   //Date Time
@@ -55,11 +62,26 @@ export default function Activity() {
   const [range, setRange] = React.useState({ startDate: undefined, endDate: undefined });
 
   const onDismissDate = () => {
-    setOpen(false)
+    setOpen(false);
   }
 
   const onConfirmDate = (params) => {
-    setOpen(false);;
+
+
+    var tempBegin = new Date(begin);
+    var tempEnd = new Date(end);
+    tempBegin.setFullYear(params['startDate'].getFullYear().toString(), params["startDate"].getMonth().toString(), params["startDate"].getDate().toString());
+    tempEnd.setFullYear(params['endDate'].getFullYear().toString(), params["endDate"].getMonth().toString(), params["endDate"].getDate().toString());
+    setBegin(tempBegin);
+    setEnd(tempEnd);
+    setRange((params['startDate']), (params['endDate']));
+    console.log(range);
+
+    //console.log(params["startDate"].getFullYear().toString())
+    //console.log(params["startDate"].getMonth().toString())
+    //console.log(params["startDate"].getDate().toString())
+    //console.log(params["startDate"].toString())
+    setOpen(false);
   }
 
 
@@ -221,7 +243,7 @@ export default function Activity() {
       </View>
 
       <View style={styles.viewComponent}>
-        <TouchableRipple onPress={() => { setRepeat("Every Day") }}>
+        <TouchableRipple onPress={() => { setRepeatToggle(true) }}>
           <View style={styles.viewTab}>
             <Icon
               source="cached"
@@ -236,7 +258,7 @@ export default function Activity() {
       </View>
 
       <View style={styles.viewComponent}>
-        <TouchableRipple onPress={() => { }}>
+        <TouchableRipple onPress={() => { setRemindToggle(true) }}>
           <View style={styles.viewTab}>
             <Icon
               source="bell-outline"
@@ -244,7 +266,7 @@ export default function Activity() {
               size={30}
             ></Icon>
             <Text style={styles.textDescription}>
-              Remind
+              {remind}
             </Text>
           </View>
         </TouchableRipple>
@@ -326,22 +348,87 @@ export default function Activity() {
         </Dialog>
       </Portal>
 
+
+      <Portal>
+        <Dialog visible={repeatToggle} onDismiss={() => setRepeatToggle(false)}>
+          <Dialog.Icon icon='cached' size={40}></Dialog.Icon>
+          <Dialog.Title>Select repeat time</Dialog.Title>
+          <Dialog.Content>
+            <View>
+              <RadioButton
+                value="No reminder"
+                status={remind === 'No reminder' ? 'checked' : 'unchecked'}
+                onPress={() => setRemind("No reminder")}
+              />
+              <RadioButton
+                value="At time"
+                status={remind === 'At time' ? 'checked' : 'unchecked'}
+                onPress={() => setRemind("At time")}
+              />
+              <RadioButton
+                value="30 minute before"
+                status={remind === '30 minute before' ? 'checked' : 'unchecked'}
+                onPress={() => setRemind("30 minute before")}
+              />
+            </View>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setRepeatToggle(false)}>OK</Button>
+            <Button onPress={() => setRepeatToggle(false)}>Cancel</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      <Portal>
+        <Dialog visible={remindToggle} onDismiss={() => setRemindToggle(false)}>
+          <Dialog.Icon icon='bell-outline' size={40}></Dialog.Icon>
+          <Dialog.Title>Select repeat time</Dialog.Title>
+          <Dialog.ScrollArea>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 24 }}>
+              <View>
+                <RadioButton
+                  value="No reminder"
+                  status={remind === 'No reminder' ? 'checked' : 'unchecked'}
+                  onPress={() => setRemind("No reminder")}
+                />
+                <RadioButton
+                  value="At time"
+                  status={remind === 'At time' ? 'checked' : 'unchecked'}
+                  onPress={() => setRemind("At time")}
+                />
+                <RadioButton
+                  value="30 minute before"
+                  status={remind === '30 minute before' ? 'checked' : 'unchecked'}
+                  onPress={() => setRemind("30 minute before")}
+                />
+              </View>
+
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setRemindToggle(false)}>OK</Button>
+            <Button onPress={() => setRemindToggle(false)}>Cancel</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
       <TimePickerModal
         visible={visibleTimePicker}
         onDismiss={onDismissTime}
         onConfirm={onConfirmTime}
         hours={time ? begin.getHours() : end.getHours()}
         minutes={time ? begin.getMinutes() : end.getMinutes()}
+        use24HourClock={false}
       />
 
       <DatePickerModal
-        locale="en"
         mode="range"
         visible={open}
         onDismiss={onDismissDate}
-        startDate={range.startDate}
-        endDate={range.endDate}
+        startDate={begin}
+        endDate={end}
         onConfirm={onConfirmDate}
+        label="Choose date"
       />
 
     </ScrollView>
