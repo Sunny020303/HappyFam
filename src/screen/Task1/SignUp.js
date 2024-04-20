@@ -70,12 +70,12 @@ const SignUp = () => {
         <TextInput
           label="Password"
           mode="outlined"
-          right=<TextInput.Icon
+          right={<TextInput.Icon
             icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
             onPress={() => {
               setSecureTextEntry(!secureTextEntry);
             }}
-          />
+          />}
           secureTextEntry={secureTextEntry}
           autoCorrect={false}
         />

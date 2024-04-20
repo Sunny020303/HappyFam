@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, Button } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { PaperProvider } from "react-native-paper";
-import LogIn from "./src/screen/Task1/LogIn";
+import LogIn from "./src/screen/Task1/Login";
 import SignUp from "./src/screen/Task1/SignUp";
 import Calendar from "./src/screen/Task2/Calendar";
 import Activity from "./src/screen/Task2/Activity";

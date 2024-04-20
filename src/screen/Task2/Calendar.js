@@ -1,11 +1,27 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import * as React from "react";
+import {
+  StyleSheet,
+  ScrollView,
+  Text,
+  View,
+  TouchableOpacity,
+} from "react-native";
+import { Button, Icon, IconButton, TextInput } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native";
+import {
+  FontFamily,
+  FontSize,
+  Color,
+  Padding,
+  StyleVariable,
+} from "../../GlobalStyles";
 
 export default function Calendar() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <Text>Calendar screen</Text>
-      <StatusBar style="auto" />
     </View>
   );
 }
