@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, ScrollView, Text, View, Image, ToastAndroid } from "react-native";
 import {
   Avatar,
@@ -10,23 +10,39 @@ import {
   Icon,
   Switch,
   RadioButton,
+  List,
+  IconButton,
+  Title,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { FontSize, Color, StyleVariable } from "../../GlobalStyles";
 import * as ImagePicker from "expo-image-picker";
 import { TimePickerModal, DatePickerModal } from "react-native-paper-dates";
 
-export default function Activity() {
+export default function Activity({ navigation }) {
+
+
+  
+
   const [title, setTitle] = useState("");
   const [withWho, setWithWho] = useState("Everyone");
   const [visible, setVisible] = useState("Everyone");
   //repeat
-  const [repeat, setRepeat] = useState(null);
+  const [repeat, setRepeat] = useState({ value: 0, unit: "day" });
   const [repeatToggle, setRepeatToggle] = useState(false);
+
+  const onRepeat = (value = 0, unit = "d") => {
+    setRepeat({ value: value, unit: unit });
+    setRepeatToggle(false);
+  }
   //remind
-  const [remind, setRemind] = useState("No reminder");
+  const [remind, setRemind] = useState({ value: 0, unit: "minute" });
   const [remindToggle, setRemindToggle] = useState(false);
 
+  const onRemind = (value = 0, unit = "minute") => {
+    setRemind({ value: value, unit: unit });
+    setRemindToggle(false);
+  }
   //location
   const [location, setLocation] = useState(null);
   const [note, setNote] = useState("");
@@ -117,6 +133,21 @@ export default function Activity() {
     }
   };
 
+  //Confirm button
+  React.useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <IconButton onPress={() => { }} icon='check' />
+      ),
+    });
+  }, [navigation]);
+
+  navigation.setOptions({
+    headerRight: () => (
+      <IconButton onPress={() => console.log(title)} icon='check' />
+    ),
+  });
+
   return (
     <ScrollView
       style={styles.container}
@@ -129,6 +160,8 @@ export default function Activity() {
           style={styles.inputTitle}
           underlineColor={Color.materialThemeSysLightInverseOnSurface}
           activeUnderlineColor={Color.materialThemeSysLightInverseOnSurface}
+          value={title}
+          onChangeText={title => setTitle(title)}
         />
       </View>
 
@@ -251,7 +284,9 @@ export default function Activity() {
               size={30}
             ></Icon>
             <Text style={styles.textDescription}>
-              {repeat ? repeat : "Repeat this event"}
+              {repeat.value == 0 ? "No repeat" :
+                "Every " + repeat.value + " " + repeat.unit + (repeat.value > 1 ? "s" : "")
+              }
             </Text>
           </View>
         </TouchableRipple>
@@ -266,7 +301,9 @@ export default function Activity() {
               size={30}
             ></Icon>
             <Text style={styles.textDescription}>
-              {remind}
+              {remind.unit == "none" ? "No reminder" : remind.value == 0 ? "At time" :
+                remind.value + " " + remind.unit + (remind.value > 1 ? "s" : "") + " before"
+              }
             </Text>
           </View>
         </TouchableRipple>
@@ -352,28 +389,31 @@ export default function Activity() {
       <Portal>
         <Dialog visible={repeatToggle} onDismiss={() => setRepeatToggle(false)}>
           <Dialog.Icon icon='cached' size={40}></Dialog.Icon>
-          <Dialog.Title>Select repeat time</Dialog.Title>
+          <Dialog.Title alignSelf="center">Select repeat time</Dialog.Title>
           <Dialog.Content>
-            <View>
-              <RadioButton
-                value="No reminder"
-                status={remind === 'No reminder' ? 'checked' : 'unchecked'}
-                onPress={() => setRemind("No reminder")}
-              />
-              <RadioButton
-                value="At time"
-                status={remind === 'At time' ? 'checked' : 'unchecked'}
-                onPress={() => setRemind("At time")}
-              />
-              <RadioButton
-                value="30 minute before"
-                status={remind === '30 minute before' ? 'checked' : 'unchecked'}
-                onPress={() => setRemind("30 minute before")}
-              />
-            </View>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRepeat(0, "day")}>
+              <Text style={{ fontSize: 20 }}>No repeat</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRepeat(1, "day")}>
+              <Text style={{ fontSize: 20 }}>Every day</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRepeat(2, "day")}>
+              <Text style={{ fontSize: 20 }}>Every two day</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRepeat(1, "week")}>
+              <Text style={{ fontSize: 20 }}>Every week</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRepeat(2, "week")}>
+              <Text style={{ fontSize: 20 }}>Every two week</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRepeat(1, "month")}>
+              <Text style={{ fontSize: 20 }}>Every Month</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRepeat(1, "year")}>
+              <Text style={{ fontSize: 20 }}>Every Year</Text>
+            </Button>
           </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setRepeatToggle(false)}>OK</Button>
+          <Dialog.Actions alignSelf="center">
             <Button onPress={() => setRepeatToggle(false)}>Cancel</Button>
           </Dialog.Actions>
         </Dialog>
@@ -382,31 +422,31 @@ export default function Activity() {
       <Portal>
         <Dialog visible={remindToggle} onDismiss={() => setRemindToggle(false)}>
           <Dialog.Icon icon='bell-outline' size={40}></Dialog.Icon>
-          <Dialog.Title>Select repeat time</Dialog.Title>
-          <Dialog.ScrollArea>
-            <ScrollView contentContainerStyle={{ paddingHorizontal: 24 }}>
-              <View>
-                <RadioButton
-                  value="No reminder"
-                  status={remind === 'No reminder' ? 'checked' : 'unchecked'}
-                  onPress={() => setRemind("No reminder")}
-                />
-                <RadioButton
-                  value="At time"
-                  status={remind === 'At time' ? 'checked' : 'unchecked'}
-                  onPress={() => setRemind("At time")}
-                />
-                <RadioButton
-                  value="30 minute before"
-                  status={remind === '30 minute before' ? 'checked' : 'unchecked'}
-                  onPress={() => setRemind("30 minute before")}
-                />
-              </View>
-
-            </ScrollView>
-          </Dialog.ScrollArea>
-          <Dialog.Actions>
-            <Button onPress={() => setRemindToggle(false)}>OK</Button>
+          <Dialog.Title alignSelf="center">Select remind time</Dialog.Title>
+          <Dialog.Content>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRemind(0, "none")}>
+              <Text style={{ fontSize: 20 }}>No remind</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRemind(0, "minute")}>
+              <Text style={{ fontSize: 20 }}>At time</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRemind(5, "minute")}>
+              <Text style={{ fontSize: 20 }}>5 minutes before</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRemind(15, "minute")}>
+              <Text style={{ fontSize: 20 }}>15 minutes before</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRemind(30, "minute")}>
+              <Text style={{ fontSize: 20 }}>30 minutes before</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRemind(1, "hour")}>
+              <Text style={{ fontSize: 20 }}>1 hour before</Text>
+            </Button>
+            <Button mode="contained-tonal" style={styles.buttonModal} onPress={() => onRemind(1, "day")}>
+              <Text style={{ fontSize: 20 }}>1 day before</Text>
+            </Button>
+          </Dialog.Content>
+          <Dialog.Actions alignSelf="center">
             <Button onPress={() => setRemindToggle(false)}>Cancel</Button>
           </Dialog.Actions>
         </Dialog>
@@ -483,4 +523,8 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: Color.materialThemeSysLightPrimary,
   },
+  buttonModal: {
+    marginTop: 10,
+    padding: 5,
+  }
 });

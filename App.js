@@ -2,7 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, Button } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { PaperProvider } from "react-native-paper";
+import { PaperProvider, IconButton } from "react-native-paper";
 import LogIn from "./src/screen/Task1/Login";
 import SignUp from "./src/screen/Task1/SignUp";
 import Calendar from "./src/screen/Task2/Calendar";
@@ -65,7 +65,12 @@ function App() {
           <Stack.Screen name="LogIn" component={LogIn} />
           <Stack.Screen name="SignUp" component={SignUp} />
           <Stack.Screen name="Calendar" component={Calendar} />
-          <Stack.Screen name="Activity" component={Activity} />
+          <Stack.Screen name="Activity" component={Activity}
+            options={({ navigation, route }) => ({
+              // Add a placeholder button without the `onPress` to avoid flicker
+              headerRight: () => <IconButton icon='check' />,
+            })}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
