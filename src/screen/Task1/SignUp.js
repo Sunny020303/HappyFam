@@ -7,12 +7,14 @@ import {
   Portal,
   TextInput,
   TouchableRipple,
+  useTheme,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { FontSize, Color, StyleVariable } from "../../GlobalStyles";
+import { Padding, FontSize, StyleVariable } from "../../GlobalStyles";
 import * as ImagePicker from "expo-image-picker";
 
 const SignUp = () => {
+  const theme = useTheme();
   const navigation = useNavigation();
   const [dialogVisible, setDialogVisible] = useState(false);
   const showDialog = () => setDialogVisible(true);
@@ -20,6 +22,38 @@ const SignUp = () => {
   const [image, setImage] = useState(null);
   const [permission, requestPermission] = ImagePicker.useCameraPermissions();
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+
+  const styles = StyleSheet.create({
+    buttonContent: {
+      paddingHorizontal: Padding.p_5xl,
+      paddingVertical: Padding.p_xs,
+    },
+    formContent: { paddingHorizontal: Padding.p_3xs, alignItems: "center" },
+    logInTypo: {
+      color: theme.colors.onSurfaceVariant,
+      letterSpacing: 1,
+      fontSize: FontSize.figmaKitKitBody_size,
+    },
+    title: { fontSize: FontSize.materialThemeHeadlineSmall_size },
+    field: {
+      paddingVertical: Padding.p_9xs,
+      backgroundColor: "transparent",
+      marginTop: 8,
+      marginBottom: 24,
+    },
+    avatarIcon: { backgroundColor: theme.colors.surfaceVariant },
+    avatar: { marginTop: 20 },
+    credentials: { marginTop: 20, alignSelf: "stretch" },
+    button: {
+      minWidth: StyleVariable.accessibilityMinBtnWidth,
+      minHeight: StyleVariable.accessibilityMinTargetSize,
+      marginTop: 20,
+      alignSelf: "stretch",
+    },
+    link: { color: theme.colors.link },
+    logIn: { marginTop: 20, flexDirection: "row" },
+    form: { marginTop: 20 },
+  });
 
   const pickImage = async () => {
     hideDialog();
@@ -60,29 +94,32 @@ const SignUp = () => {
         {image ? (
           <Avatar.Image source={{ uri: image }} />
         ) : (
-          <Avatar.Icon icon="camera" />
+          <Avatar.Icon style={styles.avatarIcon} icon="camera-outline" />
         )}
       </TouchableRipple>
       <ScrollView style={styles.credentials}>
-        <TextInput label="First name" mode="outlined" />
-        <TextInput label="Last name" mode="outlined" />
-        <TextInput label="Email" mode="outlined" />
+        <TextInput style={styles.field} label="First name" mode="outlined" />
+        <TextInput style={styles.field} label="Last name" mode="outlined" />
+        <TextInput style={styles.field} label="Email" mode="outlined" />
         <TextInput
+          style={styles.field}
           label="Password"
           mode="outlined"
-          right={<TextInput.Icon
-            icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
-            onPress={() => {
-              setSecureTextEntry(!secureTextEntry);
-            }}
-          />}
+          right={
+            <TextInput.Icon
+              icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
+              onPress={() => {
+                setSecureTextEntry(!secureTextEntry);
+              }}
+            />
+          }
           secureTextEntry={secureTextEntry}
           autoCorrect={false}
         />
       </ScrollView>
       <Button
         style={styles.button}
-        uppercase={true}
+        uppercase
         mode="contained"
         contentStyle={styles.buttonContent}
         onPress={() => console.log("pressed")}
@@ -95,7 +132,7 @@ const SignUp = () => {
           style={{ marginLeft: 5 }}
           onPress={() => navigation.navigate("LogIn")}
         >
-          <Text style={[styles.logInLink, styles.logInTypo]}>Log in</Text>
+          <Text style={[styles.logInTypo, styles.link]}>Log in</Text>
         </TouchableRipple>
       </View>
       <Portal>
@@ -116,22 +153,5 @@ const SignUp = () => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  buttonContent: { paddingHorizontal: 24, paddingVertical: 12 },
-  formContent: { paddingHorizontal: 10, alignItems: "center" },
-  logInTypo: { letterSpacing: 1, fontSize: FontSize.figmaKitKitBody_size },
-  title: { fontSize: FontSize.materialThemeHeadlineSmall_size },
-  avatar: { marginTop: 20 },
-  credentials: { marginTop: 20, alignSelf: "stretch" },
-  button: {
-    minWidth: StyleVariable.accessibilityMinBtnWidth,
-    minHeight: StyleVariable.accessibilityMinTargetSize,
-    marginTop: 20,
-  },
-  logInLink: { color: Color.colorDarkturquoise },
-  logIn: { marginTop: 20, flexDirection: "row" },
-  form: { marginTop: 20 },
-});
 
 export default SignUp;
