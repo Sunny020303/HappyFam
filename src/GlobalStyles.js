@@ -116,11 +116,11 @@ export const Theme = {
     onErrorContainer: "#410002",
     elevation: {
       level0: "transparent",
-      level1: "#6b5e100d",
-      level2: "#6b5e1014",
-      level3: "#6b5e101c",
-      level4: "#6b5e101f",
-      level5: "#6b5e1024",
+      level1: "#faf3e4",
+      level2: "#f5efdd",
+      level3: "#f1ead7",
+      level4: "#efe9d5",
+      level5: "#ece6d0",
     },
     surfaceDisabled: "#fff9ec",
     onSurfaceDisabled: "#1e1c1361",
@@ -129,6 +129,7 @@ export const Theme = {
     inverseSurface: "#333027",
     inversePrimary: "#d8c770",
     backdrop: "#332f3766",
+    link: "#00e",
   },
   dark: {
     primary: "#d8c770",
@@ -169,6 +170,7 @@ export const Theme = {
     inverseSurface: "#e8e2d4",
     inversePrimary: "#6b5e10",
     backdrop: "#332f3766",
+    link: "#00e",
   },
 };
 /* Style Variables */
