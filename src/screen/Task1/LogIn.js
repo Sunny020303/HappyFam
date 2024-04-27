@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import {
+  HelperText,
   Text,
   TextInput,
   Button,
@@ -16,15 +17,91 @@ const LogIn = () => {
   const theme = useTheme();
   const navigation = useNavigation();
   const [secureTextEntry, setSecureTextEntry] = useState(true);
-  const [resetEmail, setResetEmail] = useState(false);
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [resetEmailConfirm, setResetEmailConfirm] = useState(false);
-  const showResetEmail = () => setResetEmail(true);
-  const showResetEmailConfirm = () => {
-    hideResetEmail();
-    setResetEmailConfirm(true);
-  };
-  const hideResetEmail = () => setResetEmail(false);
+  const showForgotPassword = () => setForgotPassword(true);
+  const hideForgotPassword = () => setForgotPassword(false);
   const hideResetEmailConfirm = () => setResetEmailConfirm(false);
+
+  const [loginErrors, setLoginErrors] = useState({});
+  const [resetEmailError, setResetEmailError] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [checkInitialState, setInitialState] = useState({
+    email: true,
+    password: true,
+    resetEmail: true,
+  });
+
+  const handleLogIn = () => {
+    setInitialState({ ...checkInitialState, email: false, password: false });
+    if (validateLogin()) navigation.navigate("Activity");
+  };
+
+  const handleResetEmail = () => {
+    setInitialState({ ...checkInitialState, resetEmail: false });
+    if (validateResetEmail()) {
+      hideForgotPassword();
+      setResetEmailConfirm(true);
+    }
+  };
+
+  const validateLogin = () => {
+    let errors = {};
+
+    if (!checkInitialState.email) {
+      if (!email) errors.email = "Enter an email";
+      else if (
+        !/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+          email,
+        )
+      )
+        errors.email = "Email a valid email";
+    }
+
+    if (!checkInitialState.password) {
+      if (!password) errors.password = "Enter a password";
+    }
+
+    setLoginErrors(errors);
+    return (
+      !checkInitialState.email &&
+      !checkInitialState.password &&
+      Object.keys(errors).length === 0
+    );
+  };
+
+  const validateResetEmail = () => {
+    if (!checkInitialState.resetEmail) {
+      if (!resetEmail) {
+        setResetEmailError("Enter an email");
+        return false;
+      }
+      if (
+        !/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+          resetEmail,
+        )
+      ) {
+        setResetEmailError("Email a valid email");
+        return false;
+      }
+      setResetEmailError("");
+      return true;
+    }
+  };
+
+  useEffect(() => {
+    if (email) setInitialState({ ...checkInitialState, email: false });
+    if (password) setInitialState({ ...checkInitialState, password: false });
+    validateLogin();
+  }, [email, password]);
+
+  useEffect(() => {
+    if (resetEmail)
+      setInitialState({ ...checkInitialState, resetEmail: false });
+    validateResetEmail();
+  }, [resetEmail]);
 
   const styles = StyleSheet.create({
     buttonContent: {
@@ -32,11 +109,11 @@ const LogIn = () => {
       paddingVertical: Padding.p_xs,
     },
     formContent: { paddingHorizontal: Padding.p_3xs, alignItems: "center" },
+    helper: { padding: Padding.p_9xs },
     field: {
       paddingVertical: Padding.p_9xs,
       backgroundColor: "transparent",
       marginTop: 8,
-      marginBottom: 24,
     },
     credentials: { marginTop: 20, alignSelf: "stretch" },
     button: {
@@ -45,7 +122,7 @@ const LogIn = () => {
       marginTop: 20,
       alignSelf: "stretch",
     },
-    signUp: { marginTop: 20, flexDirection: "row" },
+    signUp: { marginVertical: 20, flexDirection: "row" },
   });
 
   return (
@@ -59,7 +136,17 @@ const LogIn = () => {
         style={styles.credentials}
         keyboardShouldPersistTaps="handled"
       >
-        <TextInput style={styles.field} label="Email" mode="outlined" />
+        <TextInput
+          style={styles.field}
+          label="Email"
+          mode="outlined"
+          value={email}
+          onChangeText={setEmail}
+          error={loginErrors.email}
+        />
+        <View style={styles.helper}>
+          <HelperText type="error">{loginErrors.email}</HelperText>
+        </View>
         <TextInput
           style={styles.field}
           label="Password"
@@ -74,16 +161,22 @@ const LogIn = () => {
           }
           secureTextEntry={secureTextEntry}
           autoCorrect={false}
+          value={password}
+          onChangeText={setPassword}
+          error={loginErrors.password}
         />
+        <View style={styles.helper}>
+          <HelperText type="error">{loginErrors.password}</HelperText>
+        </View>
       </ScrollView>
-      <TouchableRipple style={{ marginTop: 20 }} onPress={showResetEmail}>
+      <TouchableRipple style={{ marginTop: 20 }} onPress={showForgotPassword}>
         <Text style={{ color: theme.colors.link }}>Forgot password?</Text>
       </TouchableRipple>
       <Button
         style={styles.button}
         uppercase
         mode="contained"
-        onPress={() => {}}
+        onPress={handleLogIn}
         contentStyle={styles.buttonContent}
       >
         Log in
@@ -100,15 +193,25 @@ const LogIn = () => {
         </TouchableRipple>
       </View>
       <Portal>
-        <Dialog visible={resetEmail} onDismiss={hideResetEmail}>
+        <Dialog visible={forgotPassword} onDismiss={hideForgotPassword}>
           <Dialog.Title>Password reset</Dialog.Title>
           <Dialog.Content>
             <Text variant="bodyMedium">Please enter your email address</Text>
-            <TextInput style={styles.field} label="Email" mode="outlined" />
+            <TextInput
+              style={styles.field}
+              label="Email"
+              mode="outlined"
+              value={resetEmail}
+              onChangeText={setResetEmail}
+              error={resetEmailError}
+            />
+            <View style={styles.helper}>
+              <HelperText type="error">{resetEmailError}</HelperText>
+            </View>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={hideResetEmail}>CANCEL</Button>
-            <Button mode="contained" onPress={showResetEmailConfirm}>
+            <Button onPress={hideForgotPassword}>CANCEL</Button>
+            <Button mode="contained" onPress={handleResetEmail}>
               GET RESET EMAIL
             </Button>
           </Dialog.Actions>
