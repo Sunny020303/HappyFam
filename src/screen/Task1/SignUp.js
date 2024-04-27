@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { StyleSheet, ScrollView, Text, View } from "react-native";
+import { StyleSheet, ScrollView, View } from "react-native";
 import {
   Avatar,
   Button,
   Dialog,
   Portal,
+  Text,
   TextInput,
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { Padding, FontSize, StyleVariable } from "../../GlobalStyles";
+import { Padding, StyleVariable } from "../../GlobalStyles";
 import * as ImagePicker from "expo-image-picker";
 
 const SignUp = () => {
@@ -29,20 +30,13 @@ const SignUp = () => {
       paddingVertical: Padding.p_xs,
     },
     formContent: { paddingHorizontal: Padding.p_3xs, alignItems: "center" },
-    logInTypo: {
-      color: theme.colors.onSurfaceVariant,
-      letterSpacing: 1,
-      fontSize: FontSize.figmaKitKitBody_size,
-    },
-    title: { fontSize: FontSize.materialThemeHeadlineSmall_size },
     field: {
       paddingVertical: Padding.p_9xs,
       backgroundColor: "transparent",
       marginTop: 8,
       marginBottom: 24,
     },
-    avatarIcon: { backgroundColor: theme.colors.surfaceVariant },
-    avatar: { marginTop: 20 },
+    avatar: { backgroundColor: theme.colors.elevation.level5 },
     credentials: { marginTop: 20, alignSelf: "stretch" },
     button: {
       minWidth: StyleVariable.accessibilityMinBtnWidth,
@@ -50,9 +44,7 @@ const SignUp = () => {
       marginTop: 20,
       alignSelf: "stretch",
     },
-    link: { color: theme.colors.link },
     logIn: { marginTop: 20, flexDirection: "row" },
-    form: { marginTop: 20 },
   });
 
   const pickImage = async () => {
@@ -63,9 +55,7 @@ const SignUp = () => {
       aspect: [1, 1],
     });
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   const takePhoto = async () => {
@@ -78,26 +68,31 @@ const SignUp = () => {
       aspect: [1, 1],
     });
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   return (
     <ScrollView
-      style={styles.form}
+      style={{ marginTop: 20 }}
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Welcome to HappyFam!</Text>
-      <TouchableRipple style={styles.avatar} onPress={showDialog}>
+      <Text variant="headlineMedium">Welcome to HappyFam!</Text>
+      <TouchableRipple style={{ marginTop: 20 }} onPress={showDialog}>
         {image ? (
           <Avatar.Image source={{ uri: image }} />
         ) : (
-          <Avatar.Icon style={styles.avatarIcon} icon="camera-outline" />
+          <Avatar.Icon
+            color={theme.colors.primary}
+            style={styles.avatar}
+            icon="camera-outline"
+          />
         )}
       </TouchableRipple>
-      <ScrollView style={styles.credentials}>
+      <ScrollView
+        style={styles.credentials}
+        keyboardShouldPersistTaps="handled"
+      >
         <TextInput style={styles.field} label="First name" mode="outlined" />
         <TextInput style={styles.field} label="Last name" mode="outlined" />
         <TextInput style={styles.field} label="Email" mode="outlined" />
@@ -127,12 +122,12 @@ const SignUp = () => {
         Create account
       </Button>
       <View style={styles.logIn}>
-        <Text style={styles.logInTypo}>Already have an account?</Text>
+        <Text>Already have an account?</Text>
         <TouchableRipple
           style={{ marginLeft: 5 }}
           onPress={() => navigation.navigate("LogIn")}
         >
-          <Text style={[styles.logInTypo, styles.link]}>Log in</Text>
+          <Text style={{ color: theme.colors.link }}>Log in</Text>
         </TouchableRipple>
       </View>
       <Portal>

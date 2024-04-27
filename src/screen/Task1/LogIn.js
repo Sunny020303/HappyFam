@@ -1,24 +1,30 @@
 import React, { useState } from "react";
-import { Text, View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import {
+  Text,
   TextInput,
   Button,
+  Dialog,
+  Portal,
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import {
-  Padding,
-  FontSize,
-  FontFamily,
-  Color,
-  StyleVariable,
-} from "../../GlobalStyles";
+import { Padding, StyleVariable } from "../../GlobalStyles";
 
 const LogIn = () => {
   const theme = useTheme();
   const navigation = useNavigation();
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const [resetEmail, setResetEmail] = useState(false);
+  const [resetEmailConfirm, setResetEmailConfirm] = useState(false);
+  const showResetEmail = () => setResetEmail(true);
+  const showResetEmailConfirm = () => {
+    hideResetEmail();
+    setResetEmailConfirm(true);
+  };
+  const hideResetEmail = () => setResetEmail(false);
+  const hideResetEmailConfirm = () => setResetEmailConfirm(false);
 
   const styles = StyleSheet.create({
     buttonContent: {
@@ -26,12 +32,6 @@ const LogIn = () => {
       paddingVertical: Padding.p_xs,
     },
     formContent: { paddingHorizontal: Padding.p_3xs, alignItems: "center" },
-    signUpTypo: {
-      color: theme.colors.onSurfaceVariant,
-      letterSpacing: 1,
-      fontSize: FontSize.figmaKitKitBody_size,
-    },
-    title: { fontSize: FontSize.materialThemeHeadlineSmall_size },
     field: {
       paddingVertical: Padding.p_9xs,
       backgroundColor: "transparent",
@@ -39,8 +39,6 @@ const LogIn = () => {
       marginBottom: 24,
     },
     credentials: { marginTop: 20, alignSelf: "stretch" },
-    link: { color: theme.colors.link },
-    forgotPassword: { marginTop: 20 },
     button: {
       minWidth: StyleVariable.accessibilityMinBtnWidth,
       minHeight: StyleVariable.accessibilityMinTargetSize,
@@ -48,17 +46,19 @@ const LogIn = () => {
       alignSelf: "stretch",
     },
     signUp: { marginTop: 20, flexDirection: "row" },
-    form: { marginTop: 20 },
   });
 
   return (
     <ScrollView
-      style={styles.form}
+      style={{ marginTop: 20 }}
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Welcome back to HappyFam!</Text>
-      <ScrollView style={styles.credentials}>
+      <Text variant="headlineMedium">Welcome back to HappyFam!</Text>
+      <ScrollView
+        style={styles.credentials}
+        keyboardShouldPersistTaps="handled"
+      >
         <TextInput style={styles.field} label="Email" mode="outlined" />
         <TextInput
           style={styles.field}
@@ -76,8 +76,8 @@ const LogIn = () => {
           autoCorrect={false}
         />
       </ScrollView>
-      <TouchableRipple style={styles.forgotPassword} onPress={() => {}}>
-        <Text style={[styles.signUpTypo, styles.link]}>Forgot password?</Text>
+      <TouchableRipple style={{ marginTop: 20 }} onPress={showResetEmail}>
+        <Text style={{ color: theme.colors.link }}>Forgot password?</Text>
       </TouchableRipple>
       <Button
         style={styles.button}
@@ -89,14 +89,42 @@ const LogIn = () => {
         Log in
       </Button>
       <View style={styles.signUp}>
-        <Text style={styles.signUpTypo}>Don’t have an account?</Text>
+        <Text style={{ color: theme.colors.onSurfaceVariant }}>
+          Don’t have an account?
+        </Text>
         <TouchableRipple
           style={{ marginLeft: 5 }}
           onPress={() => navigation.navigate("SignUp")}
         >
-          <Text style={[styles.signUpTypo, styles.link]}>Sign up!</Text>
+          <Text style={{ color: theme.colors.link }}>Sign up!</Text>
         </TouchableRipple>
       </View>
+      <Portal>
+        <Dialog visible={resetEmail} onDismiss={hideResetEmail}>
+          <Dialog.Title>Password reset</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">Please enter your email address</Text>
+            <TextInput style={styles.field} label="Email" mode="outlined" />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={hideResetEmail}>CANCEL</Button>
+            <Button mode="contained" onPress={showResetEmailConfirm}>
+              GET RESET EMAIL
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog visible={resetEmailConfirm} onDismiss={hideResetEmailConfirm}>
+          <Dialog.Title>Password reset</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">An email has been sent to you</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button mode="contained" onPress={hideResetEmailConfirm}>
+              GOT IT
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 };

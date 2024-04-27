@@ -27,7 +27,6 @@ export const FontSize = {
 /* Colors */
 export const Color = {
   materialThemeSysLightSurfaceBright: "#fff9ec",
-  colorDarkturquoise: "#05c5cf",
   materialThemeSysLightTertiary: "#426650",
   materialThemeSysLightOnSurfaceVariant: "#4a4739",
   materialThemeSysDarkTertiaryContainer: "#2a4e39",
@@ -116,11 +115,11 @@ export const Theme = {
     onErrorContainer: "#410002",
     elevation: {
       level0: "transparent",
-      level1: "#faf3e4",
-      level2: "#f5efdd",
-      level3: "#f1ead7",
-      level4: "#efe9d5",
-      level5: "#ece6d0",
+      level1: "#fff",
+      level2: "#f9f3e5",
+      level3: "#f4ede0",
+      level4: "#eee8da",
+      level5: "#e8e2d4",
     },
     surfaceDisabled: "#fff9ec",
     onSurfaceDisabled: "#1e1c1361",
@@ -130,6 +129,8 @@ export const Theme = {
     inversePrimary: "#d8c770",
     backdrop: "#332f3766",
     link: "#00e",
+    surfaceBright: "#fff9ec",
+    surfaceDim: "#dfdacc",
   },
   dark: {
     primary: "#d8c770",
@@ -157,11 +158,11 @@ export const Theme = {
     onErrorContainer: "#ffdad6",
     elevation: {
       level0: "transparent",
-      level1: "#d8c7700d",
-      level2: "#d8c77014",
-      level3: "#d8c7701c",
-      level4: "#d8c7701f",
-      level5: "#d8c77024",
+      level1: "#100e07",
+      level2: "#1e1c13",
+      level3: "#222017",
+      level4: "#2c2a21",
+      level5: "#37352b",
     },
     surfaceDisabled: "#15130c",
     onSurfaceDisabled: "#e8e2d461",
@@ -171,6 +172,8 @@ export const Theme = {
     inversePrimary: "#6b5e10",
     backdrop: "#332f3766",
     link: "#00e",
+    surfaceBright: "#3c3930",
+    surfaceDim: "#15130c",
   },
 };
 /* Style Variables */
