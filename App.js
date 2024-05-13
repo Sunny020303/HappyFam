@@ -6,7 +6,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
 //import { DrawerActions } from "react-navigation";
-
 import {
   MD3DarkTheme,
   MD3LightTheme,
@@ -18,59 +17,17 @@ import {
 } from "react-native-paper";
 import LogIn from "./src/screen/Task1/LogIn";
 import SignUp from "./src/screen/Task1/SignUp";
+import Gallery from "./src/screen/Task1/Gallery";
+import Item from "./src/screen/Task1/Item";
+
 import Calendar from "./src/screen/Task2/Calendar";
 import Activity from "./src/screen/Task2/Activity";
+import Dashboard from "./src/screen/Task2/Dashboard";
+import Family from "./src/screen/Task2/Family";
+
 import { Theme, Color, } from "./src/GlobalStyles";
 
-function Home({ navigation }) {
 
-  return (
-    <View style={{ width: "100%", height: "100%" }}>
-      <View style={styles.container}>
-        <Text>HappyFam</Text>
-
-        <View style={styles.ButtonContainer}>
-          <Button
-            title="Login"
-            onPress={() => navigation.navigate("LogIn")}
-          ></Button>
-        </View>
-        <View style={styles.ButtonContainer}>
-          <Button
-            title="Sign up"
-            onPress={() => navigation.navigate("SignUp")}
-          ></Button>
-        </View>
-        <View style={styles.ButtonContainer}>
-          <Button
-            title="Calendar"
-            onPress={() => navigation.navigate("Calendar")}
-          ></Button>
-        </View>
-        <View style={styles.ButtonContainer}>
-          <Button
-            title="Activity"
-            onPress={() => navigation.navigate("Activity")}
-          ></Button>
-        </View>
-        <StatusBar style="auto" />
-      </View>
-    </View>
-
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ButtonContainer: {
-    marginTop: 20,
-  },
-
-});
 
 const DrawerNav = createDrawerNavigator();
 const DrawerContent = (props) => {
@@ -115,12 +72,11 @@ function App() {
             drawerActiveTintColor: "black",
           }}
         >
-          <DrawerNav.Screen name="Home" component={Home}
+          <DrawerNav.Screen name="Dashboard" component={Dashboard}
             options={({ navigation, route }) => ({
               headerStyle: {
                 backgroundColor: "#F5E388",
               },
-              // Add a placeholder button without the `onPress` to avoid flicker
               headerRight: () => (
                 <View style={{ flexDirection: "row" }}>
                   <IconButton icon="check" />
@@ -129,12 +85,13 @@ function App() {
               drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'home' : 'home-outline'} color={color} size={size}></Icon>
             })}
           />
-          <DrawerNav.Screen name="LogIn" component={LogIn}
+
+
+          <DrawerNav.Screen name="Calendar" component={Calendar}
             options={({ navigation, route }) => ({
               headerStyle: {
                 backgroundColor: "#F5E388",
               },
-              // Add a placeholder button without the `onPress` to avoid flicker
               headerRight: () => (
                 <View style={{ flexDirection: "row" }}>
                   <IconButton icon="check" />
@@ -143,12 +100,13 @@ function App() {
               drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'calendar-blank' : 'calendar-blank-outline'} color={color} size={size}></Icon>
             })}
           />
-          <DrawerNav.Screen name="SignUp" component={SignUp}
+
+
+          <DrawerNav.Screen name="Gallery" component={Gallery}
             options={({ navigation, route }) => ({
               headerStyle: {
                 backgroundColor: "#F5E388",
               },
-              // Add a placeholder button without the `onPress` to avoid flicker
               headerRight: () => (
                 <View style={{ flexDirection: "row" }}>
                   <IconButton icon="check" />
@@ -157,12 +115,13 @@ function App() {
               drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'image-album' : 'image-album'} color={color} size={size}></Icon>
             })}
           />
-          <DrawerNav.Screen name="Calendar" component={Calendar}
+
+
+          <DrawerNav.Screen name="Family" component={Family}
             options={({ navigation, route }) => ({
               headerStyle: {
-                backgroundColor: "#F5E388",
+                backgroundColor: Color.materialThemeSysLightInverseOnSurface,
               },
-              // Add a placeholder button without the `onPress` to avoid flicker
               headerRight: () => (
                 <View style={{ flexDirection: "row" }}>
                   <IconButton icon="check" />
@@ -171,13 +130,16 @@ function App() {
               drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'account-multiple' : 'account-multiple-outline'} color={color} size={size}></Icon>
             })}
           />
+
+
           <DrawerNav.Screen
-            name="Activity"
-            component={Activity}
+            name="Item"
+            component={Item}
             options={({ navigation, route }) => ({
               headerStyle: {
                 backgroundColor: "#F5E388",
               },
+
               // Add a placeholder button without the `onPress` to avoid flicker
               headerRight: () => (
                 <View style={{ flexDirection: "row" }}>
@@ -187,6 +149,34 @@ function App() {
               drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'heart' : 'heart-outline'} color={color} size={size}></Icon>
             })}
           />
+
+
+          {/*Screen hidden from drawer and just for navigate
+
+          options={()=>({
+              drawerItemStyle: { display: 'none' },
+          })},
+     
+          */}
+
+          <DrawerNav.Screen
+            name="Activity"
+            component={Activity}
+            options={({ navigation, route }) => ({
+              headerStyle: {
+                backgroundColor: "#F5E388",
+              },
+            })}
+          />
+
+          <DrawerNav.Screen
+            name="LogIn"
+            component={LogIn} />
+
+          <DrawerNav.Screen
+            name="SignUp"
+            component={SignUp} />
+
         </DrawerNav.Navigator>
       </NavigationContainer>
     </PaperProvider>

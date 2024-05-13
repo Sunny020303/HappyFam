@@ -82,8 +82,6 @@ export default function Activity({ navigation }) {
   }
 
   const onConfirmDate = (params) => {
-
-
     var tempBegin = new Date(begin);
     var tempEnd = new Date(end);
     tempBegin.setFullYear(params['startDate'].getFullYear().toString(), params["startDate"].getMonth().toString(), params["startDate"].getDate().toString());
@@ -133,7 +131,7 @@ export default function Activity({ navigation }) {
     }
   };
 
-  //Confirm button
+  //Appbar button
   React.useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -144,7 +142,7 @@ export default function Activity({ navigation }) {
 
   navigation.setOptions({
     headerRight: () => (
-      <IconButton onPress={() => console.log(title)} icon='check' />
+      <IconButton onPress={() => console.log(begin.toISOString())} icon='check' />
     ),
   });
 
