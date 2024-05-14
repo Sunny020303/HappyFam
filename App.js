@@ -4,7 +4,12 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, Button, useColorScheme } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItemList,
+  DrawerItem,
+} from '@react-navigation/drawer';
 //import { DrawerActions } from "react-navigation";
 import {
   MD3DarkTheme,
@@ -14,6 +19,7 @@ import {
   Drawer,
   Appbar,
   Icon,
+  TouchableRipple,
 } from "react-native-paper";
 import LogIn from "./src/screen/Task1/LogIn";
 import SignUp from "./src/screen/Task1/SignUp";
@@ -26,20 +32,50 @@ import Dashboard from "./src/screen/Task2/Dashboard";
 import Family from "./src/screen/Task2/Family";
 
 import { Theme, Color, } from "./src/GlobalStyles";
+import { Dimensions } from 'react-native';
 
+const screenHeight = Dimensions.get('window').height;
 
 
 const DrawerNav = createDrawerNavigator();
 const DrawerContent = (props) => {
   return (
-    <DrawerContentScrollView {...props}>
-      <View style={{ flexDirection: "row", paddingBottom: 10, paddingTop: 10, paddingLeft: 10 }}>
-        <View style={{ paddingTop: 2 }}>
-          <Icon source="menu" size={25} ></Icon>
+    <DrawerContentScrollView {...props} style={{ height: '100%' }}>
+      <View style={styles.drawerContainer}>
+        <View style={{ flexDirection: "row", paddingBottom: 10, paddingTop: 10, paddingLeft: 10 }}>
+          <View style={{ paddingTop: 2 }}>
+            <Icon source="menu" size={25} ></Icon>
+          </View>
+          <Text style={{ fontSize: 20, paddingLeft: 20, fontWeight: "500" }}>HappyFam</Text>
         </View>
-        <Text style={{ fontSize: 20, paddingLeft: 20, fontWeight: "500" }}>HappyFam</Text>
+        <DrawerItemList {...props} />
+
+        <View style={{
+          position: 'absolute',
+          bottom: 30,
+          width: "100%"
+        }}>
+          {/* Đăng xuất */}
+          <TouchableRipple onPress={() => console.log("Thoát")}>
+            <View style={{
+              width: "100%",
+              height: 60,
+              flexDirection: 'row',
+              alignItems: "center",
+              paddingLeft: 15,
+              borderRadius: 40,
+            }}>
+              <Icon source={"logout"} size={25} color='red'></Icon>
+              <Text style={{ fontSize: 20, color: "red", fontWeight: 500, paddingLeft: 20 }}>
+                Logout
+              </Text>
+            </View>
+
+          </TouchableRipple>
+        </View>
+
       </View>
-      <DrawerItemList {...props} />
+
     </DrawerContentScrollView>
   );
 }
@@ -165,17 +201,27 @@ function App() {
             options={({ navigation, route }) => ({
               headerStyle: {
                 backgroundColor: "#F5E388",
+                
               },
+              
             })}
           />
 
           <DrawerNav.Screen
             name="LogIn"
-            component={LogIn} />
+            component={LogIn}
+            options={({ navigation, route }) => ({              
+                
+            })}
+          />
 
           <DrawerNav.Screen
             name="SignUp"
-            component={SignUp} />
+            component={SignUp}
+            options={({ navigation, route }) => ({
+                
+            })}
+          />
 
         </DrawerNav.Navigator>
       </NavigationContainer>
@@ -183,4 +229,11 @@ function App() {
   );
 }
 
+
+const styles = StyleSheet.create({
+  drawerContainer: {
+    height: screenHeight,
+
+  }
+})
 export default App;
