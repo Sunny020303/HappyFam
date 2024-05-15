@@ -70,6 +70,7 @@ const SignUp = () => {
 
     if (!checkInitialState.password) {
       if (!password) errors.password = "Enter a password";
+      else if (password.length < 8) errors.password = "Password too short";
     }
 
     setSignUpErrors(errors);
