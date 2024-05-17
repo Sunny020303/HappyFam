@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, ScrollView, Text, View, Image, ToastAndroid } from "react-native";
+import { StyleSheet, ScrollView, Text, View, Image, ToastAndroid, RefreshControl, RefreshControlBase } from "react-native";
 import {
   Avatar,
   Button,
@@ -18,12 +18,17 @@ import { useNavigation } from "@react-navigation/native";
 import { FontSize, Color, StyleVariable } from "../../GlobalStyles";
 import * as ImagePicker from "expo-image-picker";
 import { TimePickerModal, DatePickerModal } from "react-native-paper-dates";
+import useCreateActivity from "../../hooks/ActivityHook/useCreateActivity";
+import picture from "../../images/activity.jpg"
+import { useIsFocused } from "@react-navigation/native";
+import { AppState } from "react-native";
+import { Dimensions } from 'react-native';
+
+
+const screenWidth = Dimensions.get('window').width;
 
 export default function Activity({ navigation }) {
-
-
-  
-
+  const isFocus = useIsFocused();
   const [title, setTitle] = useState("");
   const [withWho, setWithWho] = useState("Everyone");
   const [visible, setVisible] = useState("Everyone");
@@ -43,8 +48,8 @@ export default function Activity({ navigation }) {
     setRemind({ value: value, unit: unit });
     setRemindToggle(false);
   }
-  //location
-  const [location, setLocation] = useState(null);
+  //location and note
+  const [location, setLocation] = useState("");
   const [note, setNote] = useState("");
   //Date Time
   const [begin, setBegin] = useState(new Date());
@@ -89,7 +94,6 @@ export default function Activity({ navigation }) {
     setBegin(tempBegin);
     setEnd(tempEnd);
     setRange((params['startDate']), (params['endDate']));
-    console.log(range);
 
     //console.log(params["startDate"].getFullYear().toString())
     //console.log(params["startDate"].getMonth().toString())
@@ -101,18 +105,34 @@ export default function Activity({ navigation }) {
 
   //image chosing
   const [image, setImage] = useState(null);
+  //const [image2, setImage2] = useState(null);
+   const [height,setHeight]= useState(0);
+
   const [dialogVisible, setDialogVisible] = useState(false);
   const showDialog = () => setDialogVisible(true);
   const hideDialog = () => setDialogVisible(false);
+  const [permission, requestPermission] = ImagePicker.useCameraPermissions();
 
   const pickImage = async () => {
     hideDialog();
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      //base64: true,
 
     });
 
     if (!result.canceled) {
+      console.log(result);
+      //const formData = new FormData()
+      // formData.append('Image',{
+      //   uri: result.assets[0].uri,
+      //   name: result.assets[0].fileName,
+      //   type: result.assets[0].mimeType,
+      // })
+      //setImage(formData);
+      //setImage2(result.assets[0].base64);
+      setHeight(screenWidth*(result.assets[0].height/result.assets[0].width))
       setImage(result.assets[0].uri);
     }
   };
@@ -127,22 +147,66 @@ export default function Activity({ navigation }) {
     });
 
     if (!result.canceled) {
+      
       setImage(result.assets[0].uri);
     }
   };
 
+  const createActivity = useCreateActivity(
+    {
+      title: title,
+      start: begin,
+      end: end,
+      repeat: repeat,
+      remind: remind,
+      id_family: '1000bd5b-09d3-4634-929b-4764427436e4',
+      id_member: ['20004166-97d0-4653-a5a5-95a2ef920e22', '30004166-97d0-4653-a5a5-95a2ef920e22'],
+      location: location,
+      image: image,
+      note: note,
+    },
+    "",
+  );
+
+  if (createActivity.isSuccess) {
+    console.log(createActivity);
+    navigation.navigate('Calendar');
+    //console.log(image);
+  }
+  if (createActivity.isError) {
+    console.log(createActivity.error);
+  }
+
   //Appbar button
   React.useEffect(() => {
+
+
+
     navigation.setOptions({
       headerRight: () => (
-        <IconButton onPress={() => { }} icon='check' />
+        <IconButton onPress={() => createActivity.mutate()} icon='check' />
       ),
     });
-  }, [navigation]);
+    createActivity.reset();
+    setTitle("");
+    setWithWho("Everyone");
+    setVisible("Everyone");
+    setRepeat({ value: 0, unit: "day" });
+    setRemind({ value: 0, unit: "minute" });
+    setLocation("");
+    setNote("");
+    setBegin(new Date());
+    setEnd(new Date());
+    setAllDay(false);
+    setRange({ startDate: undefined, endDate: undefined });
+    setImage(null)
+
+    console.log(createActivity);
+  }, [isFocus]);
 
   navigation.setOptions({
     headerRight: () => (
-      <IconButton onPress={() => console.log(begin.toISOString())} icon='check' />
+      <IconButton onPress={() => createActivity.mutate()} icon='check' />
     ),
   });
 
@@ -315,21 +379,26 @@ export default function Activity({ navigation }) {
               style={styles.iconStyle}
               size={30}
             ></Icon>
-            <Text style={styles.textDescription}>
-              {location ? location : "Add location"}
-            </Text>
+            <TextInput
+              placeholder="Add location"
+              style={styles.inputTitle}
+              underlineColor={Color.materialThemeSysLightInverseOnSurface}
+              activeUnderlineColor={Color.materialThemeSysLightInverseOnSurface}
+              value={location}
+              onChangeText={location => setLocation(location)}
+            />
           </View>
         </TouchableRipple>
       </View>
 
-      <View style={styles.viewComponent}>
+      <View style={[styles.viewComponent]}>
         <TouchableRipple onPress={showDialog}>
           {image ? (
-            <View style={{ justifyContent: "center", alignItems: "center" }}>
+            <View style={{ justifyContent: "center", alignItems: "center"}}>
               <Image
-                resizeMode="contain"
+                resizeMode="cover"
                 source={{ uri: image }}
-                style={{ width: 500, height: 500 }}
+                style={{ width: "100%" , height: height}}
               >
               </Image>
             </View>
@@ -362,6 +431,8 @@ export default function Activity({ navigation }) {
             style={styles.inputTitle}
             underlineColor={Color.materialThemeSysLightInverseOnSurface}
             activeUnderlineColor={Color.materialThemeSysLightInverseOnSurface}
+            value={note}
+            onChangeText={note => setNote(note)}
           />
         </View>
 
@@ -491,7 +562,7 @@ const styles = StyleSheet.create({
   },
   viewComponent: {
     width: "100%",
-    maxHeight: "100%",
+    maxHeight: "200%",
     marginTop: 15,
     backgroundColor: Color.materialThemeSysLightInverseOnSurface,
   },

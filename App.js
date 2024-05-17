@@ -34,12 +34,23 @@ import Family from "./src/screen/Task2/Family";
 import { Theme, Color, } from "./src/GlobalStyles";
 import { Dimensions } from 'react-native';
 
+import { QueryClient, QueryClientProvider } from "react-query";
+import ViewActivity from './src/screen/Task2/ViewActivity';
+
 const screenHeight = Dimensions.get('window').height;
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 0,
+    },
+  },
+});
 
 
 const DrawerNav = createDrawerNavigator();
 const DrawerContent = (props) => {
   return (
+
     <DrawerContentScrollView {...props} style={{ height: '100%' }}>
       <View style={styles.drawerContainer}>
         <View style={{ flexDirection: "row", paddingBottom: 10, paddingTop: 10, paddingLeft: 10 }}>
@@ -87,107 +98,109 @@ function App() {
       ? { ...MD3DarkTheme, colors: Theme.dark }
       : { ...MD3LightTheme, colors: Theme.light };
   return (
-    <PaperProvider theme={theme}>
-      <NavigationContainer>
-        <DrawerNav.Navigator
-          drawerContent={DrawerContent}
-          screenOptions={{
-            drawerStyle: {
-              backgroundColor: Color.materialThemeSysLightInverseOnSurface,
-              borderTopRightRadius: 20,
-              borderBottomRightRadius: 20,
-            },
-            drawerItemStyle: {
-              borderRadius: 40,
-              padding: 0,
-            },
-            drawerLabelStyle: {
-              fontSize: 20,
-            },
-            drawerActiveBackgroundColor: Color.materialThemeSysLightSecondaryContainer,
-            drawerActiveTintColor: "black",
-          }}
-        >
-          <DrawerNav.Screen name="Dashboard" component={Dashboard}
-            options={({ navigation, route }) => ({
-              headerStyle: {
-                backgroundColor: "#F5E388",
-              },
-              headerRight: () => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton icon="check" />
-                </View>
-              ),
-              drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'home' : 'home-outline'} color={color} size={size}></Icon>
-            })}
-          />
+    <QueryClientProvider client={queryClient}>
 
-
-          <DrawerNav.Screen name="Calendar" component={Calendar}
-            options={({ navigation, route }) => ({
-              headerStyle: {
-                backgroundColor: "#F5E388",
-              },
-              headerRight: () => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton icon="check" />
-                </View>
-              ),
-              drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'calendar-blank' : 'calendar-blank-outline'} color={color} size={size}></Icon>
-            })}
-          />
-
-
-          <DrawerNav.Screen name="Gallery" component={Gallery}
-            options={({ navigation, route }) => ({
-              headerStyle: {
-                backgroundColor: "#F5E388",
-              },
-              headerRight: () => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton icon="check" />
-                </View>
-              ),
-              drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'image-album' : 'image-album'} color={color} size={size}></Icon>
-            })}
-          />
-
-
-          <DrawerNav.Screen name="Family" component={Family}
-            options={({ navigation, route }) => ({
-              headerStyle: {
+      <PaperProvider theme={theme}>
+        <NavigationContainer>
+          <DrawerNav.Navigator
+            drawerContent={DrawerContent}
+            screenOptions={{
+              drawerStyle: {
                 backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+                borderTopRightRadius: 20,
+                borderBottomRightRadius: 20,
               },
-              headerRight: () => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton icon="check" />
-                </View>
-              ),
-              drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'account-multiple' : 'account-multiple-outline'} color={color} size={size}></Icon>
-            })}
-          />
-
-
-          <DrawerNav.Screen
-            name="Item"
-            component={Item}
-            options={({ navigation, route }) => ({
-              headerStyle: {
-                backgroundColor: "#F5E388",
+              drawerItemStyle: {
+                borderRadius: 40,
+                padding: 0,
               },
+              drawerLabelStyle: {
+                fontSize: 20,
+              },
+              drawerActiveBackgroundColor: Color.materialThemeSysLightSecondaryContainer,
+              drawerActiveTintColor: "black",
+            }}
+          >
+            <DrawerNav.Screen name="Dashboard" component={Dashboard}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'home' : 'home-outline'} color={color} size={size}></Icon>
+              })}
+            />
 
-              // Add a placeholder button without the `onPress` to avoid flicker
-              headerRight: () => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton icon="check" />
-                </View>
-              ),
-              drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'heart' : 'heart-outline'} color={color} size={size}></Icon>
-            })}
-          />
+
+            <DrawerNav.Screen name="Calendar" component={Calendar}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'calendar-blank' : 'calendar-blank-outline'} color={color} size={size}></Icon>
+              })}
+            />
 
 
-          {/*Screen hidden from drawer and just for navigate
+            <DrawerNav.Screen name="Gallery" component={Gallery}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'image-album' : 'image-album'} color={color} size={size}></Icon>
+              })}
+            />
+
+
+            <DrawerNav.Screen name="Family" component={Family}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+                },
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'account-multiple' : 'account-multiple-outline'} color={color} size={size}></Icon>
+              })}
+            />
+
+
+            <DrawerNav.Screen
+              name="Item"
+              component={Item}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+
+                // Add a placeholder button without the `onPress` to avoid flicker
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => <Icon source={focused ? 'heart' : 'heart-outline'} color={color} size={size}></Icon>
+              })}
+            />
+
+
+            {/*Screen hidden from drawer and just for navigate
 
           options={()=>({
               drawerItemStyle: { display: 'none' },
@@ -195,37 +208,46 @@ function App() {
      
           */}
 
-          <DrawerNav.Screen
-            name="Activity"
-            component={Activity}
-            options={({ navigation, route }) => ({
-              headerStyle: {
-                backgroundColor: "#F5E388",
-                
-              },
-              
-            })}
-          />
+            <DrawerNav.Screen
+              name="Activity"
+              component={Activity}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
 
-          <DrawerNav.Screen
-            name="LogIn"
-            component={LogIn}
-            options={({ navigation, route }) => ({              
-                
-            })}
-          />
+                },
 
-          <DrawerNav.Screen
-            name="SignUp"
-            component={SignUp}
-            options={({ navigation, route }) => ({
-                
-            })}
-          />
+              })}
+            />
 
-        </DrawerNav.Navigator>
-      </NavigationContainer>
-    </PaperProvider>
+            <DrawerNav.Screen
+              name="LogIn"
+              component={LogIn}
+              options={({ navigation, route }) => ({
+
+              })}
+            />
+
+            <DrawerNav.Screen
+              name="SignUp"
+              component={SignUp}
+              options={({ navigation, route }) => ({
+
+              })}
+            />
+
+            <DrawerNav.Screen
+              name="View Activity"
+              component={ViewActivity}
+              options={({ navigation, route }) => ({
+
+              })}
+            />
+
+          </DrawerNav.Navigator>
+        </NavigationContainer>
+      </PaperProvider>
+    </QueryClientProvider>
   );
 }
 

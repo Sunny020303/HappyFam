@@ -36,7 +36,7 @@ const LogIn = () => {
 
   const handleLogIn = () => {
     setInitialState({ ...checkInitialState, email: false, password: false });
-    if (validateLogin()) navigation.navigate("Activity");
+    if (validateLogin()) navigation.navigate("Dashboard");
   };
 
   const handleResetEmail = () => {
@@ -131,7 +131,7 @@ const LogIn = () => {
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text variant="headlineMedium">Welcome back to HappyFam!</Text>
+      <Text variant="headlineMedium" style={{textAlign: "center"}}>Welcome back to HappyFam!</Text>
       <ScrollView
         style={styles.credentials}
         keyboardShouldPersistTaps="handled"
