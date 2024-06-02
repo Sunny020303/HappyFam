@@ -12,10 +12,12 @@ import {
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Padding, StyleVariable } from "../../GlobalStyles";
+import supabase from "@/lib/supabase";
 
 const LogIn = () => {
   const theme = useTheme();
   const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [resetEmailConfirm, setResetEmailConfirm] = useState(false);
@@ -35,9 +37,22 @@ const LogIn = () => {
   });
 
   const handleLogIn = () => {
+    setLoading(true);
     setInitialState({ ...checkInitialState, email: false, password: false });
-    if (validateLogin()) navigation.navigate("Dashboard");
+    if (signInWithEmail()) navigation.navigate("Dashboard");
   };
+
+  async function signInWithEmail() {
+    if (!validateLogin()) return false;
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) Alert.alert(error.message);
+    setLoading(false);
+    return !error;
+  }
 
   const handleResetEmail = () => {
     setInitialState({ ...checkInitialState, resetEmail: false });
@@ -131,7 +146,9 @@ const LogIn = () => {
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text variant="headlineMedium" style={{textAlign: "center"}}>Welcome back to HappyFam!</Text>
+      <Text variant="headlineMedium" style={{ textAlign: "center" }}>
+        Welcome back to HappyFam!
+      </Text>
       <ScrollView
         style={styles.credentials}
         keyboardShouldPersistTaps="handled"
@@ -178,9 +195,10 @@ const LogIn = () => {
         mode="contained"
         onPress={handleLogIn}
         contentStyle={styles.buttonContent}
-      >
-        Log in
-      </Button>
+        loading={loading}
+        disabled={loading}
+        text={loading ? "Logging in..." : "Log in"}
+      />
       <View style={styles.signUp}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>
           Don’t have an account?

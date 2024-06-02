@@ -14,10 +14,12 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Padding, StyleVariable } from "../../GlobalStyles";
 import * as ImagePicker from "expo-image-picker";
+import supabase from "@/lib/supabase";
 
 const SignUp = () => {
   const theme = useTheme();
   const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const showDialog = () => setDialogVisible(true);
   const hideDialog = () => setDialogVisible(false);
@@ -38,14 +40,30 @@ const SignUp = () => {
   });
 
   const handleSignUp = () => {
+    setLoading(true);
     setInitialState({
       firstName: false,
       lastName: false,
       email: false,
       password: false,
     });
-    if (validateSignUp()) navigation.navigate("Activity");
+    if (signUpWithEmail()) navigation.navigate("Activity");
   };
+
+  async function signUpWithEmail() {
+    if (!validateSignUp()) return false;
+
+    const { error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: { first_name: firstName, last_name: lastName, avatar: null },
+      },
+    });
+    if (error) Alert.alert(error.message);
+    setLoading(false);
+    return !error;
+  }
 
   const validateSignUp = () => {
     let errors = {};
@@ -218,9 +236,10 @@ const SignUp = () => {
         mode="contained"
         contentStyle={styles.buttonContent}
         onPress={handleSignUp}
-      >
-        Create account
-      </Button>
+        loading={loading}
+        disabled={loading}
+        text={loading ? "Creating account..." : "Create account"}
+      />
       <View style={styles.logIn}>
         <Text>Already have an account?</Text>
         <TouchableRipple
