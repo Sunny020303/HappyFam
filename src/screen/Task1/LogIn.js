@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { Alert, View, StyleSheet, ScrollView } from "react-native";
 import {
   HelperText,
   Text,
@@ -12,7 +12,7 @@ import {
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Padding, StyleVariable } from "../../GlobalStyles";
-import supabase from "@/lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 const LogIn = () => {
   const theme = useTheme();
@@ -36,14 +36,17 @@ const LogIn = () => {
     resetEmail: true,
   });
 
-  const handleLogIn = () => {
+  async function handleLogIn() {
     setLoading(true);
     setInitialState({ ...checkInitialState, email: false, password: false });
-    if (signInWithEmail()) navigation.navigate("Dashboard");
-  };
+    if (await signInWithEmail()) navigation.navigate("Dashboard");
+  }
 
   async function signInWithEmail() {
-    if (!validateLogin()) return false;
+    if (!validateLogin()) {
+      setLoading(false);
+      return false;
+    }
     const { error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -197,8 +200,9 @@ const LogIn = () => {
         contentStyle={styles.buttonContent}
         loading={loading}
         disabled={loading}
-        text={loading ? "Logging in..." : "Log in"}
-      />
+      >
+        {loading ? "Logging in..." : "Log in"}
+      </Button>
       <View style={styles.signUp}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>
           Don’t have an account?

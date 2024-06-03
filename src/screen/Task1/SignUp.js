@@ -14,7 +14,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Padding, StyleVariable } from "../../GlobalStyles";
 import * as ImagePicker from "expo-image-picker";
-import supabase from "@/lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 const SignUp = () => {
   const theme = useTheme();
@@ -39,7 +39,7 @@ const SignUp = () => {
     password: true,
   });
 
-  const handleSignUp = () => {
+  async function handleSignUp() {
     setLoading(true);
     setInitialState({
       firstName: false,
@@ -47,11 +47,14 @@ const SignUp = () => {
       email: false,
       password: false,
     });
-    if (signUpWithEmail()) navigation.navigate("Activity");
-  };
+    if (await signUpWithEmail()) navigation.navigate("Activity");
+  }
 
   async function signUpWithEmail() {
-    if (!validateSignUp()) return false;
+    if (!validateSignUp()) {
+      setLoading(false);
+      return false;
+    }
 
     const { error } = await supabase.auth.signUp({
       email: email,
@@ -238,8 +241,9 @@ const SignUp = () => {
         onPress={handleSignUp}
         loading={loading}
         disabled={loading}
-        text={loading ? "Creating account..." : "Create account"}
-      />
+      >
+        {loading ? "Creating account..." : "Create account"}
+      </Button>
       <View style={styles.logIn}>
         <Text>Already have an account?</Text>
         <TouchableRipple
