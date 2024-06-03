@@ -163,6 +163,8 @@ const LogIn = () => {
           value={email}
           onChangeText={setEmail}
           error={loginErrors.email}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
         <View style={styles.helper}>
           <HelperText type="error">{loginErrors.email}</HelperText>
@@ -180,6 +182,7 @@ const LogIn = () => {
             />
           }
           secureTextEntry={secureTextEntry}
+          autoCapitalize="none"
           autoCorrect={false}
           value={password}
           onChangeText={setPassword}
@@ -226,6 +229,8 @@ const LogIn = () => {
               value={resetEmail}
               onChangeText={setResetEmail}
               error={resetEmailError}
+              autoCapitalize="none"
+              autoCorrect={false}
             />
             <View style={styles.helper}>
               <HelperText type="error">{resetEmailError}</HelperText>

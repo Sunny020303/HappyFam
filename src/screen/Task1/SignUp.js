@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, ScrollView, View } from "react-native";
+import { Alert, StyleSheet, ScrollView, View } from "react-native";
 import {
   Avatar,
   Button,
@@ -207,6 +207,8 @@ const SignUp = () => {
           value={email}
           onChangeText={setEmail}
           error={signUpErrors.email}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
         <View style={styles.helper}>
           <HelperText type="error">{signUpErrors.email}</HelperText>
@@ -224,6 +226,7 @@ const SignUp = () => {
             />
           }
           secureTextEntry={secureTextEntry}
+          autoCapitalize="none"
           autoCorrect={false}
           value={password}
           onChangeText={setPassword}
