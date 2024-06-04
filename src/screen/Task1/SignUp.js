@@ -14,9 +14,34 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Padding, StyleVariable } from "../../GlobalStyles";
 import * as ImagePicker from "expo-image-picker";
+import { makeRedirectUri } from "expo-auth-session";
+import * as QueryParams from "expo-auth-session/build/QueryParams";
+import * as Linking from "expo-linking";
 import { supabase } from "../../lib/supabase";
 
+const redirectTo = makeRedirectUri();
+
+const createSessionFromUrl = async (url) => {
+  const { params, errorCode } = QueryParams.getQueryParams(url);
+
+  if (errorCode) throw new Error(errorCode);
+  const { access_token, refresh_token } = params;
+
+  if (!access_token) return;
+
+  const { data, error } = await supabase.auth.setSession({
+    access_token,
+    refresh_token,
+  });
+  if (error) throw error;
+  return data.session;
+};
+
 const SignUp = () => {
+  // Handle linking into app from email app.
+  const url = Linking.useURL();
+  if (url) createSessionFromUrl(url);
+
   const theme = useTheme();
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
@@ -47,7 +72,11 @@ const SignUp = () => {
       email: false,
       password: false,
     });
-    if (await signUpWithEmail()) navigation.navigate("Activity");
+    if (await signUpWithEmail())
+      Alert.alert(
+        "Sign Up Successful",
+        "Please check your email to verify your account",
+      );
   }
 
   async function signUpWithEmail() {
@@ -61,6 +90,7 @@ const SignUp = () => {
       password: password,
       options: {
         data: { first_name: firstName, last_name: lastName, avatar: null },
+        emailRedirectTo: redirectTo,
       },
     });
     if (error) Alert.alert(error.message);
