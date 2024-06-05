@@ -18,6 +18,7 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import * as Linking from "expo-linking";
 import { supabase } from "../../lib/supabase";
+import { decode } from "base64-arraybuffer";
 
 const redirectTo = makeRedirectUri();
 
@@ -73,10 +74,9 @@ const SignUp = () => {
       password: false,
     });
     if (await signUpWithEmail())
-      Alert.alert(
-        "Sign Up Successful",
-        "Please check your email to verify your account",
-      );
+      Alert.alert("Sign Up Successful", "Sign in to continue", [
+        { text: "OK", onPress: () => navigation.navigate("LogIn") },
+      ]);
   }
 
   async function signUpWithEmail() {
@@ -85,15 +85,32 @@ const SignUp = () => {
       return false;
     }
 
+    if (image) {
+      const { error } = await supabase.storage
+        .from("avatar")
+        .upload(`public/${email}.jpg`, decode(image.base64), { upsert: true });
+      if (error) {
+        Alert.alert("Upload avatar error", error.message);
+        setLoading(false);
+        return false;
+      }
+    }
+
     const { error } = await supabase.auth.signUp({
       email: email,
       password: password,
       options: {
-        data: { first_name: firstName, last_name: lastName, avatar: null },
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          avatar: image
+            ? `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/avatar/public/${email}.jpg`
+            : null,
+        },
         emailRedirectTo: redirectTo,
       },
     });
-    if (error) Alert.alert(error.message);
+    if (error) Alert.alert("Sign up error", error.message);
     setLoading(false);
     return !error;
   }
@@ -168,9 +185,10 @@ const SignUp = () => {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [1, 1],
+      base64: true,
     });
 
-    if (!result.canceled) setImage(result.assets[0].uri);
+    if (!result.canceled) setImage(result.assets[0]);
   };
 
   const takePhoto = async () => {
@@ -181,9 +199,15 @@ const SignUp = () => {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [1, 1],
+      base64: true,
     });
 
-    if (!result.canceled) setImage(result.assets[0].uri);
+    if (!result.canceled) setImage(result.assets[0]);
+  };
+
+  const deleteImage = () => {
+    hideDialog();
+    setImage(null);
   };
 
   return (
@@ -193,9 +217,13 @@ const SignUp = () => {
       keyboardShouldPersistTaps="handled"
     >
       <Text variant="headlineMedium">Welcome to HappyFam!</Text>
-      <TouchableRipple style={{ marginTop: 20 }} onPress={showDialog}>
+      <TouchableRipple
+        style={{ marginTop: 20 }}
+        onPress={showDialog}
+        disabled={loading}
+      >
         {image ? (
-          <Avatar.Image source={{ uri: image }} />
+          <Avatar.Image source={{ uri: image.uri }} />
         ) : (
           <Avatar.Icon
             color={theme.colors.primary}
@@ -282,6 +310,7 @@ const SignUp = () => {
         <TouchableRipple
           style={{ marginLeft: 5 }}
           onPress={() => navigation.navigate("LogIn")}
+          disabled={loading}
         >
           <Text style={{ color: theme.colors.link }}>Log in</Text>
         </TouchableRipple>
@@ -298,6 +327,9 @@ const SignUp = () => {
           <Dialog.Actions>
             <Button onPress={takePhoto}>Take a photo</Button>
             <Button onPress={pickImage}>Browse</Button>
+            <Button onPress={deleteImage} textColor={theme.colors.error}>
+              Delete
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

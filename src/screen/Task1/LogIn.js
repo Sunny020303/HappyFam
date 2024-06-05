@@ -52,7 +52,7 @@ const LogIn = () => {
       password: password,
     });
 
-    if (error) Alert.alert(error.message);
+    if (error) Alert.alert("Log in error", error.message);
     setLoading(false);
     return !error;
   }
