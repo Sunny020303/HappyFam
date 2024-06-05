@@ -1,9 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import { Text, View, StyleSheet, ScrollView, SafeAreaView } from "react-native";
-import { Card, Icon } from "react-native-paper";
+import { Card, Icon, IconButton, TextInput, Portal, Dialog, Button } from "react-native-paper";
 import { Color } from "../../GlobalStyles";
+import useUser from "../../hooks/UserHook/useGetUser";
+import { useIsFocused } from "@react-navigation/native";
+import useCreateFamily from "../../hooks/FamilyHook/useCreateFamily";
 
-export default Family = () => {
+
+export default Family = ({ navigation }) => {
+
+    const isFocus = useIsFocused();
+    const user = useUser();
+    const [addFamilyToggle, setAddFamilyToggle] = useState(false);
+    const [menuFamilyToggle, setMenuFamilyToggle] = useState(false);
+
+    const [dialogToggle, setDialogToggle] = useState(false);
+    var dialogTitle="";
+    var dialogInfo="";
+    var dialogIcon="";
+
+
+
+    const [newFamilyName, setNewFamilyName] = useState("");
+    //const [userId, setUserId] = useState();
 
     const familyList = [
         {
@@ -23,6 +42,37 @@ export default Family = () => {
         },
 
     ]
+
+    const createFamily = useCreateFamily(user.data?.id, newFamilyName);
+    if (createFamily.isSuccess) {
+        
+    }
+    if (createFamily.isError) {
+        console.log(createFamily.error)
+    }
+
+    React.useEffect(() => {
+
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={{ flexDirection: "row" }}>
+                    <IconButton onPress={() => setAddFamilyToggle(true)} icon='plus' />
+
+                    <IconButton onPress={() => console.log(user.data?.id)} icon='account-multiple' />
+                </View>
+            ),
+        });
+    }, [isFocus]);
+
+    navigation.setOptions({
+        headerRight: () => (
+            <View style={{ flexDirection: "row" }}>
+                <IconButton onPress={() => setAddFamilyToggle(true)} icon='plus' />
+
+                <IconButton onPress={() => console.log(user.data?.id)} icon='account-multiple' />
+            </View>
+        ),
+    });
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.scrollView}>
@@ -44,9 +94,44 @@ export default Family = () => {
                     />
                 </Card>
 
+                <Portal>
+                    <Dialog visible={addFamilyToggle} onDismiss={() => setAddFamilyToggle(false)}>
+                        <Dialog.Icon icon='plus' size={40}></Dialog.Icon>
+                        <Dialog.Title alignSelf="center">Create a new family.</Dialog.Title>
+                        <Dialog.Content>
+                            <TextInput
+                                mode="outlined"
+                                label="Family's Name"
+                                value={newFamilyName}
+                                onChangeText={newFamilyName => setNewFamilyName(newFamilyName)}
+                            />
+                        </Dialog.Content>
+                        <Dialog.Actions>
+                            <Button onPress={
+                                () => {
+                                    setAddFamilyToggle(false);
+                                    createFamily.mutate();
+                                }}
+                            >Create</Button>
+                            <Button onPress={() => setAddFamilyToggle(false)}>Cancel</Button>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
+
+                <Portal>
+                    <Dialog visible={dialogToggle} onDismiss={() => setDialogToggle(false)}>
+                        <Dialog.Icon icon={dialogIcon} size={40}></Dialog.Icon>
+                        <Dialog.Title alignSelf="center">{dialogTitle}</Dialog.Title>
+                        <Dialog.Content>
+                            <Text variant="bodyMedium">{dialogInfo}</Text>
+                        </Dialog.Content>
+                        <Dialog.Actions>
+                            <Button onPress={() => setDialogToggle(false)}>Ok</Button>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
+
             </ScrollView>
-
-
         </SafeAreaView>
     )
 }
@@ -86,9 +171,10 @@ const styles = StyleSheet.create({
         height: "100%",
     },
     cardMember: {
-        margin: 15,
+        marginTop: 5,
         marginBottom: 0,
         height: 100,
         backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+        borderRadius: 0,
     }
 })

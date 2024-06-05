@@ -38,6 +38,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import ViewActivity from './src/screen/Task2/ViewActivity';
 
 const screenHeight = Dimensions.get('window').height;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -216,6 +217,7 @@ function App() {
                   backgroundColor: "#F5E388",
 
                 },
+                drawerItemStyle: { display: 'none' },
 
               })}
             />

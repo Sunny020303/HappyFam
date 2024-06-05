@@ -29,6 +29,7 @@ const screenWidth = Dimensions.get('window').width;
 
 export default function Activity({ navigation }) {
   const isFocus = useIsFocused();
+  const user = useUser();
   const [title, setTitle] = useState("");
   const [withWho, setWithWho] = useState("Everyone");
   const [visible, setVisible] = useState("Everyone");
@@ -147,7 +148,7 @@ export default function Activity({ navigation }) {
     });
 
     if (!result.canceled) {
-      
+      setHeight(screenWidth*(result.assets[0].height/result.assets[0].width))
       setImage(result.assets[0].uri);
     }
   };
@@ -169,7 +170,8 @@ export default function Activity({ navigation }) {
   );
 
   if (createActivity.isSuccess) {
-    console.log(createActivity);
+    //console.log("hello");
+    //console.log(createActivity.data);
     navigation.navigate('Calendar');
     //console.log(image);
   }

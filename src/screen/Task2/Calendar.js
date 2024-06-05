@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { Button, Icon, IconButton, TextInput } from "react-native-paper";
+import { Button, Icon, IconButton, TextInput, Card } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import {
   FontFamily,
@@ -28,14 +28,47 @@ export default function Calendar() {
   const navigation = useNavigation();
   const [items, setItems] = React.useState({});
   const [date, setDate] = React.useState(new Date());
+  //const [test,setTest] = React.useState("2024-04-27");
+
+  /*const items = {}
+  items["2024-04-27"] = [];
+    items['2024-04-27'].push({
+      name: 'Hello mn : D',
+      height: Math.max(50, Math.floor(Math.random() * 150)),
+      day: '2024-04-07'
+    });
+    items["2024-05-26"] = [];
+    items['2024-05-26'].push({
+      name: 'Hello mn : D',
+      height: Math.max(50, Math.floor(Math.random() * 150)),
+      day: '2024-05-26'
+    });
+    items["2024-05-27"] = [];
+    items['2024-05-27'].push({
+      name: 'Con tro nay',
+      height: Math.max(50, Math.floor(Math.random() * 150)),
+      day: '2024-05-27'
+    });
+    items["2024-05-28"] = [];
+    items['2024-05-28'].push({
+      name: 'react native suck',
+      height: Math.max(50, Math.floor(Math.random() * 150)),
+      day: '2024-05-28'
+    });
+    items["2024-05-30"] = [];
+    items['2024-05-30'].push({
+      name: 'Hello mn : D',
+      height: Math.max(50, Math.floor(Math.random() * 150)),
+      day: '2024-04-06'
+    });*/
+
 
   const loadItems = (day) => {
     const items = items || {};
-
-
+    //console.log(day)
 
     setTimeout(() => {
-      for (let i = -15; i < 85; i++) {
+      for (let i = 0; i < 50; i++) {
         const time = day.timestamp + i * 24 * 60 * 60 * 1000;
         const strTime = timeToString(time);
 
@@ -50,53 +83,68 @@ export default function Calendar() {
 
       setItems(newItems);
 
-    }, 10000);
+    }, 100);
 
 
-    items["2024-04-07"] = [];
-    items['2024-04-07'].push({
+    items["2024-04-27"] = [];
+    items['2024-04-27'].push({
       name: 'Hello mn : D',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
+      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
       day: '2024-04-07'
     });
-    items["2024-05-07"] = [];
-    items['2024-05-07'].push({
+    items["2024-05-26"] = [];
+    items['2024-05-26'].push({
       name: 'Hello mn : D',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-05-07'
+      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
+      day: '2024-05-26'
     });
-    items['2024-05-07'].push({
+    items["2024-05-27"] = [];
+    items['2024-05-27'].push({
       name: 'Con tro nay',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-05-07'
+      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
+      day: '2024-05-27'
     });
-    items["2024-05-08"] = [];
-    items['2024-05-08'].push({
+    items["2024-05-28"] = [];
+    items['2024-05-28'].push({
       name: 'react native suck',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-05-07'
+      image: 'No image',
+      day: '2024-05-28'
+    });
+    items["2024-05-30"] = [];
+    items['2024-05-30'].push({
+      name: 'Hello mn : D',
+      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
+      day: '2024-04-06'
+    });
+    items['2024-05-30'].push({
+      name: 'Hello mn : D',
+      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
+      day: '2024-04-06'
     });
 
-    const newItems = {};
-    Object.keys(items).forEach(key => {
-      newItems[key] = items[key];
-    });
 
-    setItems(newItems);
+
+    setItems(items);
   };
 
   //render các tab công việc
   const renderItem = (reservation, isFirst) => {
-    const fontSize = isFirst ? 16 : 14;
-    const color = isFirst ? 'black' : '#43515c';
+
+    const height = reservation.image === 'No image' ? 100 : 300
 
     return (
-      <TouchableOpacity
-        style={[styles.item, { height: reservation.height }]}
+      <Card
+        style={[styles.item, { height: height }]}
         onPress={() => Alert.alert(reservation.name)}
       >
-        <Text style={{ fontSize, color }}>{reservation.name}</Text>
-      </TouchableOpacity>
+        {
+          reservation.image !== 'No image' && (
+            <Card.Cover style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}} source={{ uri: reservation.image }}></Card.Cover>
+          )
+        }
+        <Card.Title title={reservation.name} subtitle={reservation.day}></Card.Title>
+
+      </Card>
     );
   };
   //vọc
@@ -104,7 +152,7 @@ export default function Calendar() {
   renderEmptyDate = () => {
     return (
       <View style={styles.emptyDate}>
-        <Text>This is empty date!</Text>
+        <Text>No activity today!</Text>
       </View>
     );
   };
@@ -130,14 +178,14 @@ export default function Calendar() {
   React.useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <IconButton onPress={() => { }} icon='check' />
+        <IconButton onPress={() => navigation.navigate('Activity')} icon='check' />
       ),
     });
   }, [navigation]);
 
   navigation.setOptions({
     headerRight: () => (
-      <IconButton onPress={() => console.log(timeToString(date))} icon='check' />
+      <IconButton onPress={() => navigation.navigate('Activity')} icon='plus' />
     ),
   });
 
@@ -146,19 +194,44 @@ export default function Calendar() {
       <Agenda
         items={items}
         loadItemsForMonth={loadItems}
-        selected={date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate()}
+        //selected={date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate()}
+        //selected={}
+        current={400}
         renderItem={renderItem}
         showClosingKnob={true}
         renderEmptyDate={this.renderEmptyDate}
         rowHasChanged={this.rowHasChanged}
+        showScrollIndicator={true}
+        //onScroll={(offSet)=>console.log(offSet)}
+        //onEndReached={()=>console.log("U reach the end")}
+        //onStartReached={()=>console.log("U reach the top")}
+        pastScrollRange={50}
+        futureScrollRange={50}
         //renderList={renderActivityList}
         // monthFormat={'yyyy'}
         //markingType={'period'}
-        theme={{calendarBackground: Color.materialThemeSysLightInverseOnSurface, agendaKnobColor: '#F5E388' }}
+        //onDayChange={(dayData)=>{console.log(dayData)}}
+        theme={{
+          calendarBackground: Color.materialThemeSysLightInverseOnSurface,
+
+          todayBackgroundColor: Color.materialThemeSysLightSurfaceContainerLow,
+          backgroundColor: Color.materialThemeSysLightSurfaceContainerLow,
+          
+          renderActivityList: Color.materialThemeSysLightSurfaceContainerLow,
+          agendaKnobColor: '#F5E388',
+          //todayDotColor: "pink", 
+          agendaTodayColor: "red",
+          //selectedDotColor: "green",
+          //dotColor:"yellow",
+          //todayButtonTextColor: "purple",
+          selectedDayBackgroundColor: "grey",
+          selectedDayTextColor: "blue"
+
+        }}
         //renderDay={renderDay}
-        //hideExtraDays={true}
-        //showOnlySelectedDayItems
-        // reservationsKeyExtractor={this.reservationsKeyExtractor}       
+        hideExtraDays={true}
+      //showOnlySelectedDayItems
+      // reservationsKeyExtractor={this.reservationsKeyExtractor}       
       />
     </View>
   );
@@ -167,15 +240,13 @@ export default function Calendar() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    //backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+    backgroundColor: Color.materialThemeSysLightInverseOnSurface,
     width: "100%",
     height: "100%",
   },
   item: {
-    backgroundColor: 'pink',
+    backgroundColor: Color.materialThemeSysLightInverseOnSurface,
     flex: 1,
-    borderRadius: 5,
-    padding: 10,
     marginRight: 10,
     marginTop: 17
   },
@@ -185,7 +256,6 @@ const styles = StyleSheet.create({
     paddingTop: 30
   },
   customDay: {
-
     fontSize: 40,
     color: 'green',
     backgroundColor: "blue",

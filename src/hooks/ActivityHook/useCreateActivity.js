@@ -86,10 +86,6 @@ const createActivity = async (activity, id_activity) => {
         }
 
     }
-
-
-
-
     return data;
 
 }
