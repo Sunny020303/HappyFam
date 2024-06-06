@@ -18,7 +18,6 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import * as Linking from "expo-linking";
 import { supabase } from "../../lib/supabase";
-import { decode } from "base64-arraybuffer";
 
 const redirectTo = makeRedirectUri();
 
@@ -86,9 +85,10 @@ const SignUp = () => {
     }
 
     if (image) {
+      const arraybuffer = await fetch(image).then((res) => res.arrayBuffer());
       const { error } = await supabase.storage
         .from("avatar")
-        .upload(`public/${email}.jpg`, decode(image.base64), { upsert: true });
+        .upload(`public/${email}.jpg`, arraybuffer, { upsert: true });
       if (error) {
         Alert.alert("Upload avatar error", error.message);
         setLoading(false);
@@ -185,10 +185,9 @@ const SignUp = () => {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [1, 1],
-      base64: true,
     });
 
-    if (!result.canceled) setImage(result.assets[0]);
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   const takePhoto = async () => {
@@ -199,10 +198,9 @@ const SignUp = () => {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [1, 1],
-      base64: true,
     });
 
-    if (!result.canceled) setImage(result.assets[0]);
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   const deleteImage = () => {
@@ -223,7 +221,7 @@ const SignUp = () => {
         disabled={loading}
       >
         {image ? (
-          <Avatar.Image source={{ uri: image.uri }} />
+          <Avatar.Image source={{ uri: image }} />
         ) : (
           <Avatar.Icon
             color={theme.colors.primary}

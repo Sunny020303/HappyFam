@@ -39,7 +39,7 @@ const LogIn = () => {
   async function handleLogIn() {
     setLoading(true);
     setInitialState({ ...checkInitialState, email: false, password: false });
-    if (await signInWithEmail()) navigation.navigate("Dashboard");
+    await signInWithEmail();
   }
 
   async function signInWithEmail() {
