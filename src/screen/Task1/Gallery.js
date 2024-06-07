@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, FlatList, Image, View, StyleSheet } from "react-native";
 import { Button, Icon, TouchableRipple } from "react-native-paper";
 import ImageViewing from "react-native-image-viewing";
+import { supabase } from "../../lib/supabase";
 
 export default Gallery = () => {
   const [currentImageIndex, setImageIndex] = useState(0);
@@ -9,23 +10,24 @@ export default Gallery = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setImages([
-      {
-        uri: "https://plus.unsplash.com/premium_photo-1714229505201-072ef1c6edcd?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      },
-      {
-        uri: "https://images.unsplash.com/photo-1715596828741-3e2aa6bc3aff?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      },
-      {
-        uri: "https://images.unsplash.com/photo-1715590876582-18e4844864a6?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      },
-      {
-        uri: "https://images.unsplash.com/photo-1715645961085-b3c21251a061?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      },
-      {
-        uri: "https://images.unsplash.com/photo-1715520045597-de56a8639058?q=80&w=1286&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      },
-    ]);
+    async function fetchImages() {
+      const { data, error } = await supabase.storage
+        .from("activityPics")
+        .list("public", {
+          sortBy: { column: "updated_at", order: "desc" },
+        });
+
+      if (error) Alert.alert("Error fetching images", error.message);
+      else
+        setImages(
+          data.map((item) => ({
+            name: `public/${item.name}`,
+            uri: `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/${item.name}`,
+          })),
+        );
+    }
+
+    fetchImages();
   }, []);
 
   const onSelect = (index) => {
