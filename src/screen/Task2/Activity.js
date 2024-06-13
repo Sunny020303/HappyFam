@@ -23,7 +23,7 @@ import picture from "../../images/activity.jpg"
 import { useIsFocused } from "@react-navigation/native";
 import { AppState } from "react-native";
 import { Dimensions } from 'react-native';
-
+import useUser from "../../hooks/UserHook/useGetUser"; 
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -160,8 +160,8 @@ export default function Activity({ navigation }) {
       end: end,
       repeat: repeat,
       remind: remind,
-      id_family: '1000bd5b-09d3-4634-929b-4764427436e4',
-      id_member: ['20004166-97d0-4653-a5a5-95a2ef920e22', '30004166-97d0-4653-a5a5-95a2ef920e22'],
+      id_family: 'cadb52ea-9d5a-47ba-af1a-3e1f6599aa5c',
+      id_member: ['19f45d36-9313-4eb1-a77b-f88608603d27'],
       location: location,
       image: image,
       note: note,

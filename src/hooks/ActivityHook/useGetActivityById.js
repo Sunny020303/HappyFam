@@ -2,10 +2,10 @@ import { useQuery, useQueryClient } from "react-query";
 import supabase from "../../app/supabase";
 
 const getActivityById = async (activity_id) =>{
-    let { activity , error } = await supabase
+    let { data: activity , error } = await supabase
         .from('activity')
         .select('*')
-        .eq("id",activity_id)
+        .eq('id',activity_id);
         
     if (error) {
         throw new Error(error.message);
@@ -16,7 +16,7 @@ const getActivityById = async (activity_id) =>{
     return activity;
 }
 
-export default function userGetActivityList(activity_id) {
+export default function userGetActivityById(activity_id) {
     return useQuery("Activity", ()=> getActivityById(activity_id))
 }
 

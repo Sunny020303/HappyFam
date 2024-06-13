@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { Button, Icon, IconButton, TextInput, Card } from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
+import { Button, Icon, IconButton, TextInput, Card, ActivityIndicator } from "react-native-paper";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import {
   FontFamily,
   FontSize,
@@ -17,6 +17,7 @@ import {
   StyleVariable,
 } from "../../GlobalStyles";
 import { Agenda, DateData, AgendaEntry, AgendaSchedule } from 'react-native-calendars';
+import userGetActivityList from "../../hooks/ActivityHook/useGetActivityList";
 
 const timeToString = (time) => {
   const date = new Date(time);
@@ -25,53 +26,38 @@ const timeToString = (time) => {
 
 
 export default function Calendar() {
+  const isFocus = useIsFocused();
   const navigation = useNavigation();
   const [items, setItems] = React.useState({});
   const [date, setDate] = React.useState(new Date());
-  //const [test,setTest] = React.useState("2024-04-27");
+  const activiyList = userGetActivityList("cadb52ea-9d5a-47ba-af1a-3e1f6599aa5c", date);
 
-  /*const items = {}
-  items["2024-04-27"] = [];
-    items['2024-04-27'].push({
-      name: 'Hello mn : D',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-04-07'
+  React.useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <IconButton onPress={() => navigation.navigate('Activity')} icon='check' />
+      ),
     });
-    items["2024-05-26"] = [];
-    items['2024-05-26'].push({
-      name: 'Hello mn : D',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-05-26'
-    });
-    items["2024-05-27"] = [];
-    items['2024-05-27'].push({
-      name: 'Con tro nay',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-05-27'
-    });
-    items["2024-05-28"] = [];
-    items['2024-05-28'].push({
-      name: 'react native suck',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-05-28'
-    });
-    items["2024-05-30"] = [];
-    items['2024-05-30'].push({
-      name: 'Hello mn : D',
-      height: Math.max(50, Math.floor(Math.random() * 150)),
-      day: '2024-04-06'
-    });*/
 
+    console.log("hi there!");
+    activiyList.refetch();
+    setItems({});
+  }, [isFocus]);
+
+  if (activiyList.isFetching) {
+    return (
+      <View style={{ alignItems: "center", justifyContent: "center",height: "100%", width: "100%" }}>
+        <ActivityIndicator animating={true} color='blue' size="large"></ActivityIndicator>
+      </View>
+    )
+  }
 
   const loadItems = (day) => {
     const items = items || {};
-    //console.log(day)
-
     setTimeout(() => {
-      for (let i = 0; i < 50; i++) {
+      for (let i =-70; i < 70; i++) {
         const time = day.timestamp + i * 24 * 60 * 60 * 1000;
         const strTime = timeToString(time);
-
         if (!items[strTime]) {
           items[strTime] = [];
         }
@@ -80,49 +66,21 @@ export default function Calendar() {
       Object.keys(items).forEach(key => {
         newItems[key] = items[key];
       });
-
       setItems(newItems);
-
     }, 100);
 
-
-    items["2024-04-27"] = [];
-    items['2024-04-27'].push({
-      name: 'Hello mn : D',
-      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
-      day: '2024-04-07'
+    activiyList.data?.map((i) => {
+      let start = timeToString(i.start);
+      if (!items[start]) {
+        items[start] = []
+      }
+      items[start].push({
+        name: i.title,
+        image: i.image,
+        day: start,
+        id: i.id,
+      });
     });
-    items["2024-05-26"] = [];
-    items['2024-05-26'].push({
-      name: 'Hello mn : D',
-      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
-      day: '2024-05-26'
-    });
-    items["2024-05-27"] = [];
-    items['2024-05-27'].push({
-      name: 'Con tro nay',
-      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
-      day: '2024-05-27'
-    });
-    items["2024-05-28"] = [];
-    items['2024-05-28'].push({
-      name: 'react native suck',
-      image: 'No image',
-      day: '2024-05-28'
-    });
-    items["2024-05-30"] = [];
-    items['2024-05-30'].push({
-      name: 'Hello mn : D',
-      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
-      day: '2024-04-06'
-    });
-    items['2024-05-30'].push({
-      name: 'Hello mn : D',
-      image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/36ab31da-9638-473a-97cb-a71197f5cfa3.png',
-      day: '2024-04-06'
-    });
-
-
 
     setItems(items);
   };
@@ -135,11 +93,15 @@ export default function Calendar() {
     return (
       <Card
         style={[styles.item, { height: height }]}
-        onPress={() => Alert.alert(reservation.name)}
+        onPress={() => {
+          navigation.navigate('View Activity', {
+            activityId: reservation.id,
+          });
+        }}
       >
         {
           reservation.image !== 'No image' && (
-            <Card.Cover style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}} source={{ uri: reservation.image }}></Card.Cover>
+            <Card.Cover style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }} source={{ uri: reservation.image }}></Card.Cover>
           )
         }
         <Card.Title title={reservation.name} subtitle={reservation.day}></Card.Title>
@@ -175,13 +137,7 @@ export default function Calendar() {
   }
 
   //Header button
-  React.useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <IconButton onPress={() => navigation.navigate('Activity')} icon='check' />
-      ),
-    });
-  }, [navigation]);
+
 
   navigation.setOptions({
     headerRight: () => (
@@ -216,7 +172,7 @@ export default function Calendar() {
 
           todayBackgroundColor: Color.materialThemeSysLightSurfaceContainerLow,
           backgroundColor: Color.materialThemeSysLightSurfaceContainerLow,
-          
+
           renderActivityList: Color.materialThemeSysLightSurfaceContainerLow,
           agendaKnobColor: '#F5E388',
           //todayDotColor: "pink", 
