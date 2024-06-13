@@ -41,6 +41,8 @@ import { Dimensions } from "react-native";
 import { QueryClient, QueryClientProvider } from "react-query";
 import ViewActivity from "./src/screen/Task2/ViewActivity";
 
+import useGetFamily from "./src/hooks/FamilyHook/useGetFamily";
+
 const screenHeight = Dimensions.get("window").height;
 
 const queryClient = new QueryClient({
@@ -118,169 +120,182 @@ const DrawerContent = (props) => {
 };
 
 function App() {
-  const [session, setSession] = useState(null);
-
-  const iconSize = 20;
   const theme =
     useColorScheme() === "dark"
       ? { ...MD3DarkTheme, colors: Theme.dark }
       : { ...MD3LightTheme, colors: Theme.light };
 
+  return (
+    <QueryClientProvider client={queryClient}>
+      <PaperProvider theme={theme}>
+        <AppContent />
+      </PaperProvider>
+    </QueryClientProvider>
+  );
+}
+
+function AppContent() {
+  const [session, setSession] = useState(null);
+
+  const GetFamily = useGetFamily(session?.user?.id);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      GetFamily.refetch();
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      GetFamily.refetch();
     });
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PaperProvider theme={theme}>
-        <NavigationContainer>
-          {session && session.user ? (
-            <DrawerNav.Navigator
-              drawerContent={DrawerContent}
-              screenOptions={{
-                drawerStyle: {
+    <NavigationContainer>
+      {session && session.user ? (
+        GetFamily && GetFamily.data && GetFamily.data.length > 0 ? (
+          <DrawerNav.Navigator
+            drawerContent={DrawerContent}
+            screenOptions={{
+              drawerStyle: {
+                backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+                borderTopRightRadius: 20,
+                borderBottomRightRadius: 20,
+              },
+              drawerItemStyle: {
+                borderRadius: 40,
+                padding: 0,
+              },
+              drawerLabelStyle: {
+                fontSize: 20,
+              },
+              drawerActiveBackgroundColor:
+                Color.materialThemeSysLightSecondaryContainer,
+              drawerActiveTintColor: "black",
+            }}
+          >
+            <DrawerNav.Screen
+              name="Dashboard"
+              component={Dashboard}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => (
+                  <Icon
+                    source={focused ? "home" : "home-outline"}
+                    color={color}
+                    size={size}
+                  ></Icon>
+                ),
+              })}
+            />
+
+            <DrawerNav.Screen
+              name="Calendar"
+              component={Calendar}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => (
+                  <Icon
+                    source={
+                      focused ? "calendar-blank" : "calendar-blank-outline"
+                    }
+                    color={color}
+                    size={size}
+                  ></Icon>
+                ),
+              })}
+            />
+
+            <DrawerNav.Screen
+              name="Gallery"
+              component={Gallery}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => (
+                  <Icon
+                    source={focused ? "image-album" : "image-album"}
+                    color={color}
+                    size={size}
+                  ></Icon>
+                ),
+              })}
+            />
+
+            <DrawerNav.Screen
+              name="Family"
+              options={({ navigation, route }) => ({
+                title: GetFamily.data[0].family.name,
+                headerStyle: {
                   backgroundColor: Color.materialThemeSysLightInverseOnSurface,
-                  borderTopRightRadius: 20,
-                  borderBottomRightRadius: 20,
                 },
-                drawerItemStyle: {
-                  borderRadius: 40,
-                  padding: 0,
-                },
-                drawerLabelStyle: {
-                  fontSize: 20,
-                },
-                drawerActiveBackgroundColor:
-                  Color.materialThemeSysLightSecondaryContainer,
-                drawerActiveTintColor: "black",
-              }}
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => (
+                  <Icon
+                    source={
+                      focused ? "account-multiple" : "account-multiple-outline"
+                    }
+                    color={color}
+                    size={size}
+                  ></Icon>
+                ),
+              })}
             >
-              <DrawerNav.Screen
-                name="Dashboard"
-                component={Dashboard}
-                options={({ navigation, route }) => ({
-                  headerStyle: {
-                    backgroundColor: "#F5E388",
-                  },
-                  headerRight: () => (
-                    <View style={{ flexDirection: "row" }}>
-                      <IconButton icon="check" />
-                    </View>
-                  ),
-                  drawerIcon: ({ color, size, focused }) => (
-                    <Icon
-                      source={focused ? "home" : "home-outline"}
-                      color={color}
-                      size={size}
-                    ></Icon>
-                  ),
-                })}
-              />
+              {(props) => (
+                <Family {...props} family={GetFamily.data[0].id_family} />
+              )}
+            </DrawerNav.Screen>
 
-              <DrawerNav.Screen
-                name="Calendar"
-                component={Calendar}
-                options={({ navigation, route }) => ({
-                  headerStyle: {
-                    backgroundColor: "#F5E388",
-                  },
-                  headerRight: () => (
-                    <View style={{ flexDirection: "row" }}>
-                      <IconButton icon="check" />
-                    </View>
-                  ),
-                  drawerIcon: ({ color, size, focused }) => (
-                    <Icon
-                      source={
-                        focused ? "calendar-blank" : "calendar-blank-outline"
-                      }
-                      color={color}
-                      size={size}
-                    ></Icon>
-                  ),
-                })}
-              />
+            <DrawerNav.Screen
+              name="Item"
+              component={Item}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
 
-              <DrawerNav.Screen
-                name="Gallery"
-                component={Gallery}
-                options={({ navigation, route }) => ({
-                  headerStyle: {
-                    backgroundColor: "#F5E388",
-                  },
-                  headerRight: () => (
-                    <View style={{ flexDirection: "row" }}>
-                      <IconButton icon="check" />
-                    </View>
-                  ),
-                  drawerIcon: ({ color, size, focused }) => (
-                    <Icon
-                      source={focused ? "image-album" : "image-album"}
-                      color={color}
-                      size={size}
-                    ></Icon>
-                  ),
-                })}
-              />
+                // Add a placeholder button without the `onPress` to avoid flicker
+                headerRight: () => (
+                  <View style={{ flexDirection: "row" }}>
+                    <IconButton icon="check" />
+                  </View>
+                ),
+                drawerIcon: ({ color, size, focused }) => (
+                  <Icon
+                    source={focused ? "heart" : "heart-outline"}
+                    color={color}
+                    size={size}
+                  ></Icon>
+                ),
+              })}
+            />
 
-              <DrawerNav.Screen
-                name="Family"
-                component={Family}
-                options={({ navigation, route }) => ({
-                  headerStyle: {
-                    backgroundColor:
-                      Color.materialThemeSysLightInverseOnSurface,
-                  },
-                  headerRight: () => (
-                    <View style={{ flexDirection: "row" }}>
-                      <IconButton icon="check" />
-                    </View>
-                  ),
-                  drawerIcon: ({ color, size, focused }) => (
-                    <Icon
-                      source={
-                        focused
-                          ? "account-multiple"
-                          : "account-multiple-outline"
-                      }
-                      color={color}
-                      size={size}
-                    ></Icon>
-                  ),
-                })}
-              />
-
-              <DrawerNav.Screen
-                name="Item"
-                component={Item}
-                options={({ navigation, route }) => ({
-                  headerStyle: {
-                    backgroundColor: "#F5E388",
-                  },
-
-                  // Add a placeholder button without the `onPress` to avoid flicker
-                  headerRight: () => (
-                    <View style={{ flexDirection: "row" }}>
-                      <IconButton icon="check" />
-                    </View>
-                  ),
-                  drawerIcon: ({ color, size, focused }) => (
-                    <Icon
-                      source={focused ? "heart" : "heart-outline"}
-                      color={color}
-                      size={size}
-                    ></Icon>
-                  ),
-                })}
-              />
-
-              {/*Screen hidden from drawer and just for navigate
+            {/*Screen hidden from drawer and just for navigate
 
           options={()=>({
               drawerItemStyle: { display: 'none' },
@@ -288,49 +303,71 @@ function App() {
      
           */}
 
-              <DrawerNav.Screen
-                name="Activity"
-                component={Activity}
-                options={({ navigation, route }) => ({
-                  headerStyle: {
-                    backgroundColor: "#F5E388",
-                  },
-                  drawerItemStyle: { display: "none" },
-                })}
-              />
+            <DrawerNav.Screen
+              name="Activity"
+              component={Activity}
+              options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: "#F5E388",
+                },
+                drawerItemStyle: { display: "none" },
+              })}
+            />
 
-              <DrawerNav.Screen
-                name="View Activity"
-                component={ViewActivity}
-                options={({ navigation, route }) => ({})}
-              />
-            </DrawerNav.Navigator>
-          ) : (
-            <Stack.Navigator>
-              <Stack.Screen
-                name="SignUp"
-                component={SignUp}
-                options={({ navigation, route }) => ({ title: null })}
-              />
-              <Stack.Screen
-                headerBackVisible={false}
-                name="LogIn"
-                component={LogIn}
-                options={({ navigation, route }) => ({
-                  title: null,
-                  headerBackVisible: false,
-                })}
-              />
-            </Stack.Navigator>
-          )}
-          <DrawerNav.Screen
-            navigationKey={session && session.user ? "user" : "guest"}
-            name="Dashboard"
-            component={Dashboard}
+            <DrawerNav.Screen
+              name="View Activity"
+              component={ViewActivity}
+              options={({ navigation, route }) => ({})}
+            />
+          </DrawerNav.Navigator>
+        ) : (
+          <DrawerNav.Navigator
+            drawerContent={DrawerContent}
+            screenOptions={{
+              drawerStyle: {
+                backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+                borderTopRightRadius: 20,
+                borderBottomRightRadius: 20,
+              },
+              drawerItemStyle: {
+                borderRadius: 40,
+                padding: 0,
+              },
+              drawerLabelStyle: {
+                fontSize: 20,
+              },
+              drawerActiveBackgroundColor:
+                Color.materialThemeSysLightSecondaryContainer,
+              drawerActiveTintColor: "black",
+            }}
+          >
+            <DrawerNav.Screen
+              name="Create or Join a Family!"
+              options={({ navigation, route }) => ({})}
+            >
+              {(props) => <Family {...props} family={""} />}
+            </DrawerNav.Screen>
+          </DrawerNav.Navigator>
+        )
+      ) : (
+        <Stack.Navigator>
+          <Stack.Screen
+            name="SignUp"
+            component={SignUp}
+            options={({ navigation, route }) => ({ title: null })}
           />
-        </NavigationContainer>
-      </PaperProvider>
-    </QueryClientProvider>
+          <Stack.Screen
+            headerBackVisible={false}
+            name="LogIn"
+            component={LogIn}
+            options={({ navigation, route }) => ({
+              title: null,
+              headerBackVisible: false,
+            })}
+          />
+        </Stack.Navigator>
+      )}
+    </NavigationContainer>
   );
 }
 

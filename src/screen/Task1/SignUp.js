@@ -72,10 +72,7 @@ const SignUp = () => {
       email: false,
       password: false,
     });
-    if (await signUpWithEmail())
-      Alert.alert("Sign Up Successful", "Sign in to continue", [
-        { text: "OK", onPress: () => navigation.navigate("LogIn") },
-      ]);
+    await signUpWithEmail();
   }
 
   async function signUpWithEmail() {
