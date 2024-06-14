@@ -7,7 +7,7 @@ const getFamilyMemberList = async (family_id) => {
   let { data, error } = await supabase
     .from("family_member")
     .select(
-      "id_member, role, family_role, profiles(id, first_name, last_name, avatar)",
+      "id_member, role, family_role, profiles(id, first_name, last_name, avatar, email)",
     )
     .eq("id_family", family_id);
 

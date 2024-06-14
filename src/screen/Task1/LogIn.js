@@ -23,7 +23,11 @@ const LogIn = () => {
   const [resetEmailConfirm, setResetEmailConfirm] = useState(false);
   const showForgotPassword = () => setForgotPassword(true);
   const hideForgotPassword = () => setForgotPassword(false);
-  const hideResetEmailConfirm = () => setResetEmailConfirm(false);
+  const hideResetEmailConfirm = () => {
+    setResetEmailConfirm(false);
+    setResetEmail("");
+    setInitialState({ ...checkInitialState, resetEmail: true });
+  };
 
   const [loginErrors, setLoginErrors] = useState({});
   const [resetEmailError, setResetEmailError] = useState("");
@@ -109,18 +113,6 @@ const LogIn = () => {
     }
   };
 
-  useEffect(() => {
-    if (email) setInitialState({ ...checkInitialState, email: false });
-    if (password) setInitialState({ ...checkInitialState, password: false });
-    validateLogin();
-  }, [email, password]);
-
-  useEffect(() => {
-    if (resetEmail)
-      setInitialState({ ...checkInitialState, resetEmail: false });
-    validateResetEmail();
-  }, [resetEmail]);
-
   const styles = StyleSheet.create({
     buttonContent: {
       paddingHorizontal: Padding.p_5xl,
@@ -161,7 +153,14 @@ const LogIn = () => {
           label="Email"
           mode="outlined"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(e) => {
+            setEmail(e);
+            validateLogin();
+          }}
+          onBlur={() => {
+            setInitialState({ ...checkInitialState, email: false });
+            validateLogin();
+          }}
           error={loginErrors.email}
           autoCapitalize="none"
           autoCorrect={false}
@@ -185,7 +184,14 @@ const LogIn = () => {
           autoCapitalize="none"
           autoCorrect={false}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(e) => {
+            setPassword(e);
+            validateLogin();
+          }}
+          onBlur={() => {
+            setInitialState({ ...checkInitialState, password: false });
+            validateLogin();
+          }}
           error={loginErrors.password}
         />
         <View style={styles.helper}>
@@ -227,7 +233,14 @@ const LogIn = () => {
               label="Email"
               mode="outlined"
               value={resetEmail}
-              onChangeText={setResetEmail}
+              onChangeText={(e) => {
+                setResetEmail(e);
+                validateResetEmail();
+              }}
+              onBlur={() => {
+                setInitialState({ ...checkInitialState, resetEmail: false });
+                validateResetEmail();
+              }}
               error={resetEmailError}
               autoCapitalize="none"
               autoCorrect={false}

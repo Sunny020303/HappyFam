@@ -145,14 +145,6 @@ const SignUp = () => {
     );
   };
 
-  useEffect(() => {
-    if (firstName) setInitialState({ ...checkInitialState, firstName: false });
-    if (lastName) setInitialState({ ...checkInitialState, lastName: false });
-    if (email) setInitialState({ ...checkInitialState, email: false });
-    if (password) setInitialState({ ...checkInitialState, password: false });
-    validateSignUp();
-  }, [firstName, lastName, email, password]);
-
   const styles = StyleSheet.create({
     buttonContent: {
       paddingHorizontal: Padding.p_5xl,
@@ -236,7 +228,14 @@ const SignUp = () => {
           label="First name"
           mode="outlined"
           value={firstName}
-          onChangeText={setFirstName}
+          onChangeText={(e) => {
+            setFirstName(e);
+            validateSignUp();
+          }}
+          onBlur={() => {
+            setInitialState({ ...checkInitialState, firstName: false });
+            validateSignUp();
+          }}
           error={signUpErrors.firstName}
         />
         <View style={styles.helper}>
@@ -247,7 +246,14 @@ const SignUp = () => {
           label="Last name"
           mode="outlined"
           value={lastName}
-          onChangeText={setLastName}
+          onChangeText={(e) => {
+            setLastName(e);
+            validateSignUp();
+          }}
+          onBlur={() => {
+            setInitialState({ ...checkInitialState, lastName: false });
+            validateSignUp();
+          }}
           error={signUpErrors.lastName}
         />
         <View style={styles.helper}>
@@ -258,7 +264,14 @@ const SignUp = () => {
           label="Email"
           mode="outlined"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(e) => {
+            setEmail(e);
+            validateSignUp();
+          }}
+          onBlur={() => {
+            setInitialState({ ...checkInitialState, email: false });
+            validateSignUp();
+          }}
           error={signUpErrors.email}
           autoCapitalize="none"
           autoCorrect={false}
@@ -282,7 +295,14 @@ const SignUp = () => {
           autoCapitalize="none"
           autoCorrect={false}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(e) => {
+            setPassword(e);
+            validateSignUp();
+          }}
+          onBlur={() => {
+            setInitialState({ ...checkInitialState, password: false });
+            validateSignUp();
+          }}
           error={signUpErrors.password}
         />
         <View style={styles.helper}>
