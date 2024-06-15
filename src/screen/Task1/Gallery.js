@@ -46,9 +46,7 @@ export default Gallery = () => {
         renderItem={({ item, index }) => (
           <TouchableRipple
             style={styles.button}
-            onPress={() => {
-              onSelect(index);
-            }}
+            onPress={() => onSelect(index)}
           >
             <Image source={{ uri: item.uri }} style={styles.image} />
           </TouchableRipple>

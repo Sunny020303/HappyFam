@@ -1,12 +1,17 @@
 import React, { useState } from "react";
 import { useQueryClient } from "react-query";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { supabase } from "../../lib/supabase";
 import {
+  Alert,
+  Keyboard,
   Text,
   View,
   StyleSheet,
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import {
   Card,
@@ -19,23 +24,68 @@ import {
   Button,
   useTheme,
 } from "react-native-paper";
-import { Color, Theme } from "../../GlobalStyles";
 import useUser from "../../hooks/UserHook/useGetUser";
-import { useIsFocused } from "@react-navigation/native";
 import useCreateFamily from "../../hooks/FamilyHook/useCreateFamily";
 import useCreateInvitation from "../../hooks/FamilyHook/useCreateInvitation";
 import useDeleteInvitation from "../../hooks/FamilyHook/useDeleteInvitation";
 import useJoinFamily from "../../hooks/FamilyHook/useJoinFamily";
 import useGetFamilyMemberList from "../../hooks/FamilyHook/useGetFamilyMemberList";
 import useGetInvitationList from "../../hooks/FamilyHook/useGetInvitationList";
-import { Padding } from "../../GlobalStyles";
+import useGetFamily from "../../hooks/FamilyHook/useGetFamily";
+import useUpdateFamilyImage from "../../hooks/FamilyHook/useUpdateFamilyImage";
+import useUpdateFamilyName from "../../hooks/FamilyHook/useUpdateFamilyName";
+import useDeleteFamily from "../../hooks/FamilyHook/useDeleteFamily";
+import * as ImagePicker from "expo-image-picker";
+import { Color, FontSize, Padding, StyleVariable } from "../../GlobalStyles";
 
-export default Family = ({ family, navigation }) => {
-  const isFocus = useIsFocused();
+const Stack = createNativeStackNavigator();
+
+export default Family = ({ family, navigation, route }) => {
+  const theme = useTheme();
+
+  family
+    ? navigation.setOptions({
+        headerRight: () => (
+          <View style={{ flexDirection: "row" }}>
+            <IconButton
+              onPress={() => navigation.navigate("Family Settings")}
+              icon="cog-outline"
+            />
+          </View>
+        ),
+      })
+    : null;
+
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Family Members"
+        options={({ navigation, route }) => ({
+          headerShown: false,
+        })}
+      >
+        {(props) => <FamilyMembers {...props} family={family} />}
+      </Stack.Screen>
+      <Stack.Screen
+        name="Family Settings"
+        options={({ navigation, route }) => ({
+          headerStyle: { backgroundColor: theme.colors.primaryContainer },
+          unmountOnBlur: true,
+        })}
+      >
+        {(props) => <FamilySettings {...props} family={family} />}
+      </Stack.Screen>
+    </Stack.Navigator>
+  );
+};
+
+export const FamilyMembers = ({ family, navigation, route }) => {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
+
   const user = useUser();
   const queryClient = useQueryClient();
   const [addFamilyToggle, setAddFamilyToggle] = useState(false);
-  const [menuFamilyToggle, setMenuFamilyToggle] = useState(false);
   const [addMemberToggle, setAddMemberToggle] = useState(false);
   const [addMemberConfirm, setAddMemberConfirm] = useState(false);
   const hideAddMemberConfirm = () => {
@@ -101,21 +151,6 @@ export default Family = ({ family, navigation }) => {
   };
 
   React.useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={{ flexDirection: "row" }}>
-          <IconButton onPress={() => setAddFamilyToggle(true)} icon="plus" />
-
-          <IconButton
-            onPress={() => console.log(user.data?.id)}
-            icon="account-multiple"
-          />
-        </View>
-      ),
-    });
-  }, [isFocus]);
-
-  React.useEffect(() => {
     invitationList.refetch();
   }, [user]);
 
@@ -126,20 +161,9 @@ export default Family = ({ family, navigation }) => {
     }
   }, [createInvitation.isSuccess]);
 
-  navigation.setOptions({
-    headerRight: () => (
-      <View style={{ flexDirection: "row" }}>
-        <IconButton
-          onPress={() => console.log(user.data?.id)}
-          icon="account-multiple"
-        />
-      </View>
-    ),
-  });
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+    <SafeAreaView>
+      <ScrollView contentContainerStyle={styles.scrollView}>
         {familyList && familyList.data && familyList.data.length > 0 ? (
           <>
             {familyList.data.map((item) => (
@@ -155,9 +179,7 @@ export default Family = ({ family, navigation }) => {
             ))}
             <Card
               style={styles.cardMember}
-              onPress={() => {
-                setAddMemberToggle(true);
-              }}
+              onPress={() => setAddMemberToggle(true)}
             >
               <Card.Title
                 title="Add Member"
@@ -169,7 +191,6 @@ export default Family = ({ family, navigation }) => {
                   width: "70px",
                   marginTop: 15,
                   borderRadius: 10,
-                  backgroundColor: "pink",
                 }}
                 titleStyle={{
                   height: 50,
@@ -208,7 +229,6 @@ export default Family = ({ family, navigation }) => {
                   width: "70px",
                   marginTop: 15,
                   borderRadius: 10,
-                  backgroundColor: "pink",
                 }}
                 titleStyle={{
                   height: 50,
@@ -235,7 +255,6 @@ export default Family = ({ family, navigation }) => {
                   width: "70px",
                   marginTop: 15,
                   borderRadius: 10,
-                  backgroundColor: "pink",
                 }}
                 titleStyle={{
                   height: 50,
@@ -295,7 +314,10 @@ export default Family = ({ family, navigation }) => {
                   validateEmail();
                 }}
                 onBlur={() => {
-                  setInitialState({ ...checkInitialState, email: false });
+                  setInitialState({
+                    ...checkInitialState,
+                    email: false,
+                  });
                   validateEmail();
                 }}
                 error={emailError}
@@ -357,8 +379,391 @@ export default Family = ({ family, navigation }) => {
   );
 };
 
+const FamilySettings = ({ family, navigation, route }) => {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
+
+  const queryClient = useQueryClient();
+  const user = useUser();
+  const GetFamily = useGetFamily(family);
+  if (GetFamily.isError) console.log(GetFamily.error);
+  const DeleteFamily = useDeleteFamily(family);
+
+  const [image, setImage] = useState("");
+  const [name, setName] = useState("");
+
+  const updateFamilyImage = useUpdateFamilyImage(
+    family,
+    `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/Family-${family}.jpg`,
+  );
+  if (updateFamilyImage.isError) console.log(updateFamilyImage.error);
+  const updateFamilyName = useUpdateFamilyName(family, name);
+  if (updateFamilyName.isError) console.log(updateFamilyName.error);
+
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const showDialog = () => setDialogVisible(true);
+  const hideDialog = () => setDialogVisible(false);
+  const [permission, requestPermission] = ImagePicker.useCameraPermissions();
+  const [deleteFamilyToggle, setDeleteFamilyToggle] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const [loginErrors, setLoginErrors] = useState({});
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [checkInitialState, setInitialState] = useState({
+    email: true,
+    password: true,
+  });
+
+  const uploadImage = async () => {
+    if (image) {
+      const arraybuffer = await fetch(image).then((res) => res.arrayBuffer());
+      const { error } = await supabase.storage
+        .from("activityPics")
+        .upload(`public/Family-${family}.jpg`, arraybuffer, { upsert: true });
+      if (error) {
+        Alert.alert("Upload image error", error.message);
+        return;
+      }
+      updateFamilyImage.mutate();
+    }
+  };
+
+  const pickImage = async () => {
+    hideDialog();
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      uploadImage();
+    }
+  };
+
+  const takePhoto = async () => {
+    hideDialog();
+    await requestPermission();
+    if (!permission) return;
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+
+    if (!result.canceled)
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+        uploadImage();
+      }
+  };
+
+  const deleteImage = () => {
+    hideDialog();
+    Alert.alert(
+      "Delete Family Image",
+      "Are you sure you want to delete the family image?",
+      [
+        {
+          text: "CANCEL",
+        },
+        {
+          text: "DELETE",
+          onPress: () => setImage(null),
+        },
+      ],
+    );
+  };
+
+  async function handleDeleteFamily() {
+    setLoading(true);
+    setInitialState({ email: false, password: false });
+    await signInWithEmail();
+  }
+
+  async function signInWithEmail() {
+    if (!validateLogin()) {
+      setLoading(false);
+      return false;
+    }
+    const { data } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (data?.user?.id) {
+      DeleteFamily.mutate();
+      Alert.alert("Delete Success", "Family successfully deleted");
+      deleteFamilyToggle(false);
+      queryClient.invalidateQueries("Family");
+    } else {
+      Alert.alert(
+        "Error",
+        "Your credential is not valid. For safety concerns, you need to re-log",
+      );
+      const { logouterror } = await supabase.auth.signOut();
+      if (logouterror) Alert.alert("Log out error", logouterror.message);
+    }
+
+    setLoading(false);
+    return !error;
+  }
+
+  const validateLogin = () => {
+    let errors = {};
+
+    if (!checkInitialState.email) {
+      if (!email) errors.email = "Enter an email";
+      else if (
+        !/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+          email,
+        )
+      )
+        errors.email = "Email a valid email";
+      else if (email !== user.data?.email) errors.email = "Enter your email";
+    }
+
+    if (!checkInitialState.password) {
+      if (!password) errors.password = "Enter a password";
+    }
+
+    setLoginErrors(errors);
+    return (
+      !checkInitialState.email &&
+      !checkInitialState.password &&
+      Object.keys(errors).length === 0
+    );
+  };
+
+  React.useEffect(() => {
+    if (updateFamilyImage.isSuccess || updateFamilyName.isSuccess) {
+      GetFamily.refetch();
+      queryClient.invalidateQueries("Family");
+    }
+  }, [updateFamilyImage.isSuccess, updateFamilyName.isSuccess]);
+
+  React.useEffect(() => {
+    if (GetFamily.isSuccess && GetFamily.data) {
+      setName(GetFamily.data[0].name);
+      setImage(GetFamily.data[0].image);
+    }
+  }, [GetFamily.isSuccess]);
+
+  // When the keyboard is hidden, dismiss it instead
+  React.useEffect(() => {
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      Keyboard.dismiss();
+    });
+
+    return () => hideSubscription.remove();
+  }, []);
+
+  // Hide Drawer header when on Family Settings
+  React.useLayoutEffect(() => {
+    if (!navigation || !route) return;
+
+    // Get parent by id
+    const drawerNavigator = navigation.getParent("Drawer");
+
+    if (drawerNavigator) {
+      if (route.name === "Family Settings") {
+        drawerNavigator.setOptions({
+          headerShown: false,
+        });
+      }
+    }
+
+    // Turn header back on when unmount
+    return drawerNavigator
+      ? () =>
+          drawerNavigator.setOptions({
+            headerShown: true,
+          })
+      : undefined;
+  }, [navigation, route]);
+
+  return (
+    <SafeAreaView>
+      <ScrollView contentContainerStyle={styles.container}>
+        {image && image !== "none" ? (
+          <View>
+            <Image
+              source={{ uri: image }}
+              style={{ marginVertical: 20, width: 300, height: 300 }}
+            />
+            <Button
+              icon="plus"
+              mode="outlined"
+              onPress={showDialog}
+              style={{ marginBottom: 40 }}
+            >
+              UPDATE PHOTO
+            </Button>
+          </View>
+        ) : (
+          <View style={{ marginVertical: 20 }}>
+            <View
+              style={{
+                width: 300,
+                backgroundColor: Color.materialThemeSysLightSurfaceDim,
+              }}
+            >
+              <Icon source="account-multiple" size={300} />
+            </View>
+            <Button
+              icon="plus"
+              mode="outlined"
+              onPress={showDialog}
+              style={{ marginVertical: 20 }}
+            >
+              ADD A PHOTO
+            </Button>
+          </View>
+        )}
+        <TextInput
+          mode="flat"
+          variant="largeTitle"
+          placeholder="+ Add family name"
+          value={name}
+          onChangeText={setName}
+          onBlur={() => updateFamilyName.mutate()}
+          style={{
+            width: 350,
+            backgroundColor: "transparent",
+            fontSize: FontSize.materialThemeTitleLarge_size,
+          }}
+        />
+        <Button
+          mode="contained"
+          onPress={() => setDeleteFamilyToggle(true)}
+          style={{ marginTop: 200 }}
+        >
+          DELETE FAMILY
+        </Button>
+      </ScrollView>
+
+      <Portal>
+        <Dialog
+          visible={deleteFamilyToggle}
+          onDismiss={() => setDeleteFamilyToggle(false)}
+        >
+          <Dialog.Title>Confirm deleting family</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              <Text>Deleting your family will </Text>
+              <Text style={{ fontWeight: "bold" }}>
+                permanently delete all data stored in the family, including
+                activities and photos in the gallery. This action cannot be
+                undone.
+              </Text>
+            </Text>
+            <Text variant="bodyMedium">
+              Once you submit this form, you could immediately create a new
+              family or join one.
+            </Text>
+
+            <ScrollView
+              style={styles.credentials}
+              keyboardShouldPersistTaps="handled"
+            >
+              <TextInput
+                style={styles.field}
+                label="Email"
+                mode="outlined"
+                value={email}
+                onChangeText={(e) => {
+                  setEmail(e);
+                  validateLogin();
+                }}
+                onBlur={() => {
+                  setInitialState({ ...checkInitialState, email: false });
+                  validateLogin();
+                }}
+                error={loginErrors.email}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <View style={styles.helper}>
+                <HelperText type="error">{loginErrors.email}</HelperText>
+              </View>
+              <TextInput
+                style={styles.field}
+                label="Password"
+                mode="outlined"
+                right={
+                  <TextInput.Icon
+                    icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
+                    onPress={() => setSecureTextEntry(!secureTextEntry)}
+                  />
+                }
+                secureTextEntry={secureTextEntry}
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={password}
+                onChangeText={(e) => {
+                  setPassword(e);
+                  validateLogin();
+                }}
+                onBlur={() => {
+                  setInitialState({ ...checkInitialState, password: false });
+                  validateLogin();
+                }}
+                error={loginErrors.password}
+              />
+              <View style={styles.helper}>
+                <HelperText type="error">{loginErrors.password}</HelperText>
+              </View>
+            </ScrollView>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => setDeleteFamilyToggle(false)}
+              loading={loading}
+              disabled={loading}
+            >
+              CANCEL
+            </Button>
+            <Button
+              uppercase
+              mode="contained"
+              onPress={handleDeleteFamily}
+              contentStyle={styles.buttonContent}
+              loading={loading}
+              disabled={loading}
+            >
+              DELETE
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      <Portal>
+        <Dialog visible={dialogVisible} onDismiss={hideDialog}>
+          <Dialog.Title>Upload family image</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              You can upload a family image to make it more personal.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={takePhoto}>Take a photo</Button>
+            <Button onPress={pickImage}>Browse</Button>
+            <Button onPress={deleteImage} textColor={theme.colors.error}>
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </SafeAreaView>
+  );
+};
+
 const InviteCard = (props) => {
   const theme = useTheme();
+  const styles = makeStyles(theme);
+
   const queryClient = useQueryClient();
   const [focus, setFocus] = useState(false);
 
@@ -399,7 +804,6 @@ const InviteCard = (props) => {
               width: "70px",
               marginTop: 15,
               borderRadius: 10,
-              backgroundColor: "pink",
             }}
             right={() => {
               return (
@@ -413,9 +817,7 @@ const InviteCard = (props) => {
                     </Button>
                     <Button
                       textColor={theme.colors.error}
-                      onPress={() => {
-                        setDismissToggle(true);
-                      }}
+                      onPress={() => setDismissToggle(true)}
                     >
                       Dismiss
                     </Button>
@@ -487,6 +889,9 @@ const InviteCard = (props) => {
 };
 
 const MemberCard = (props) => {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
+
   return (
     <Card style={styles.cardMember}>
       <Card.Title
@@ -502,7 +907,6 @@ const MemberCard = (props) => {
           width: "70px",
           marginTop: 15,
           borderRadius: 10,
-          backgroundColor: "pink",
         }}
         titleStyle={{
           height: 50,
@@ -516,26 +920,45 @@ const MemberCard = (props) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100%",
-    width: "100%",
-    backgroundColor: Color.materialThemeSysLightOutlineVariant,
-  },
-  scrollView: {
-    backgroundColor: Color.materialThemeSysLightOutlineVariant,
-    width: "100%",
-    height: "100%",
-  },
-  cardMember: {
-    marginTop: 5,
-    marginBottom: 0,
-    height: 100,
-    backgroundColor: Color.materialThemeSysLightInverseOnSurface,
-    borderRadius: 0,
-  },
-  helper: { padding: Padding.p_9xs },
-});
+const makeStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+      width: "100%",
+      backgroundColor: theme.colors.secondaryContainer,
+    },
+    scrollView: {
+      backgroundColor: theme.colors.secondaryContainer,
+      width: "100%",
+      height: "100%",
+    },
+    cardMember: {
+      marginTop: 5,
+      marginBottom: 0,
+      height: 100,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 0,
+    },
+    helper: { padding: Padding.p_9xs },
+    buttonContent: {
+      paddingHorizontal: Padding.p_5xl,
+      paddingVertical: Padding.p_xs,
+    },
+    formContent: { paddingHorizontal: Padding.p_3xs, alignItems: "center" },
+    helper: { padding: Padding.p_9xs },
+    field: {
+      paddingVertical: Padding.p_9xs,
+      backgroundColor: "transparent",
+      marginTop: 8,
+    },
+    credentials: { marginTop: 20, alignSelf: "stretch" },
+    button: {
+      minWidth: StyleVariable.accessibilityMinBtnWidth,
+      minHeight: StyleVariable.accessibilityMinTargetSize,
+      marginTop: 20,
+      alignSelf: "stretch",
+    },
+  });

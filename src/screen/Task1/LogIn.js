@@ -175,9 +175,7 @@ const LogIn = () => {
           right={
             <TextInput.Icon
               icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
-              onPress={() => {
-                setSecureTextEntry(!secureTextEntry);
-              }}
+              onPress={() => setSecureTextEntry(!secureTextEntry)}
             />
           }
           secureTextEntry={secureTextEntry}

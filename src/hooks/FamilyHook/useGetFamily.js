@@ -1,15 +1,10 @@
 import { useQuery, useQueryClient } from "react-query";
 import supabase from "../../app/supabase";
 
-const getFamilyMemberById = async (id_member) => {
-  if (!id_member) return null;
+const getFamily = async (id) => {
+  if (!id) return null;
 
-  let { data, error } = await supabase
-    .from("family_member")
-    .select(
-      "id, id_family, id_member, role, family_role, family(id, name, image)",
-    )
-    .eq("id_member", id_member);
+  let { data, error } = await supabase.from("family").select("*").eq("id", id);
 
   if (error) {
     throw new Error(error.message);
@@ -20,6 +15,6 @@ const getFamilyMemberById = async (id_member) => {
   return data;
 };
 
-export default function userGetFamilyMemberById(id_member) {
-  return useQuery("Family", () => getFamilyMemberById(id_member));
+export default function userGetFamily(id) {
+  return useQuery("GetFamily", () => getFamily(id));
 }

@@ -20,6 +20,7 @@ import {
   Appbar,
   Icon,
   TouchableRipple,
+  useTheme,
 } from "react-native-paper";
 
 import { supabase } from "./src/lib/supabase";
@@ -33,15 +34,15 @@ import Item from "./src/screen/Task1/Item";
 import Calendar from "./src/screen/Task2/Calendar";
 import Activity from "./src/screen/Task2/Activity";
 import Dashboard from "./src/screen/Task2/Dashboard";
-import Family from "./src/screen/Task2/Family";
+import Family, { FamilyMembers } from "./src/screen/Task2/Family";
 
-import { Theme, Color } from "./src/GlobalStyles";
+import { Theme } from "./src/GlobalStyles";
 import { Dimensions } from "react-native";
 
 import { QueryClient, QueryClientProvider } from "react-query";
 import ViewActivity from "./src/screen/Task2/ViewActivity";
 
-import useGetFamily from "./src/hooks/FamilyHook/useGetFamily";
+import useGetFamilyMemberById from "./src/hooks/FamilyHook/useGetFamilyMemberById";
 
 const screenHeight = Dimensions.get("window").height;
 
@@ -56,6 +57,8 @@ const queryClient = new QueryClient({
 const Stack = createNativeStackNavigator();
 const DrawerNav = createDrawerNavigator();
 const DrawerContent = (props) => {
+  const theme = useTheme();
+
   return (
     <DrawerContentScrollView {...props} style={{ height: "100%" }}>
       <View style={styles.drawerContainer}>
@@ -100,11 +103,15 @@ const DrawerContent = (props) => {
                 borderRadius: 40,
               }}
             >
-              <Icon source={"logout"} size={25} color="red"></Icon>
+              <Icon
+                source={"logout"}
+                size={25}
+                color={theme.colors.error}
+              ></Icon>
               <Text
                 style={{
                   fontSize: 20,
-                  color: "red",
+                  color: theme.colors.error,
                   fontWeight: 500,
                   paddingLeft: 20,
                 }}
@@ -135,9 +142,11 @@ function App() {
 }
 
 function AppContent() {
+  const theme = useTheme();
+
   const [session, setSession] = useState(null);
 
-  const GetFamily = useGetFamily(session?.user?.id);
+  const GetFamily = useGetFamilyMemberById(session?.user?.id);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -156,10 +165,11 @@ function AppContent() {
       {session && session.user ? (
         GetFamily && GetFamily.data && GetFamily.data.length > 0 ? (
           <DrawerNav.Navigator
+            id="Drawer"
             drawerContent={DrawerContent}
             screenOptions={{
               drawerStyle: {
-                backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+                backgroundColor: theme.colors.surface,
                 borderTopRightRadius: 20,
                 borderBottomRightRadius: 20,
               },
@@ -170,9 +180,8 @@ function AppContent() {
               drawerLabelStyle: {
                 fontSize: 20,
               },
-              drawerActiveBackgroundColor:
-                Color.materialThemeSysLightSecondaryContainer,
-              drawerActiveTintColor: "black",
+              drawerActiveBackgroundColor: theme.colors.secondaryContainer,
+              drawerActiveTintColor: theme.colors.onSecondaryContainer,
             }}
           >
             <DrawerNav.Screen
@@ -180,7 +189,7 @@ function AppContent() {
               component={Dashboard}
               options={({ navigation, route }) => ({
                 headerStyle: {
-                  backgroundColor: "#F5E388",
+                  backgroundColor: theme.colors.primaryContainer,
                 },
                 headerRight: () => (
                   <View style={{ flexDirection: "row" }}>
@@ -202,7 +211,7 @@ function AppContent() {
               component={Calendar}
               options={({ navigation, route }) => ({
                 headerStyle: {
-                  backgroundColor: "#F5E388",
+                  backgroundColor: theme.colors.primaryContainer,
                 },
                 headerRight: () => (
                   <View style={{ flexDirection: "row" }}>
@@ -226,7 +235,7 @@ function AppContent() {
               component={Gallery}
               options={({ navigation, route }) => ({
                 headerStyle: {
-                  backgroundColor: "#F5E388",
+                  backgroundColor: theme.colors.primaryContainer,
                 },
                 headerRight: () => (
                   <View style={{ flexDirection: "row" }}>
@@ -248,7 +257,7 @@ function AppContent() {
               options={({ navigation, route }) => ({
                 title: GetFamily.data[0].family.name,
                 headerStyle: {
-                  backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+                  backgroundColor: theme.colors.primaryContainer,
                 },
                 headerRight: () => (
                   <View style={{ flexDirection: "row" }}>
@@ -271,12 +280,12 @@ function AppContent() {
               )}
             </DrawerNav.Screen>
 
-            <DrawerNav.Screen
+            {/* <DrawerNav.Screen
               name="Item"
               component={Item}
               options={({ navigation, route }) => ({
                 headerStyle: {
-                  backgroundColor: "#F5E388",
+                  backgroundColor: theme.colors.primaryContainer,
                 },
 
                 // Add a placeholder button without the `onPress` to avoid flicker
@@ -293,7 +302,7 @@ function AppContent() {
                   ></Icon>
                 ),
               })}
-            />
+            /> */}
 
             {/*Screen hidden from drawer and just for navigate
 
@@ -308,7 +317,7 @@ function AppContent() {
               component={Activity}
               options={({ navigation, route }) => ({
                 headerStyle: {
-                  backgroundColor: "#F5E388",
+                  backgroundColor: theme.colors.primaryContainer,
                 },
                 drawerItemStyle: { display: "none" },
               })}
@@ -325,7 +334,7 @@ function AppContent() {
             drawerContent={DrawerContent}
             screenOptions={{
               drawerStyle: {
-                backgroundColor: Color.materialThemeSysLightInverseOnSurface,
+                backgroundColor: theme.colors.surface,
                 borderTopRightRadius: 20,
                 borderBottomRightRadius: 20,
               },
@@ -336,16 +345,15 @@ function AppContent() {
               drawerLabelStyle: {
                 fontSize: 20,
               },
-              drawerActiveBackgroundColor:
-                Color.materialThemeSysLightSecondaryContainer,
-              drawerActiveTintColor: "black",
+              drawerActiveBackgroundColor: theme.colors.secondaryContainer,
+              drawerActiveTintColor: theme.colors.onSecondaryContainer,
             }}
           >
             <DrawerNav.Screen
               name="Create or Join a Family!"
-              options={({ navigation, route }) => ({})}
+              options={({ navigation, route }) => {}}
             >
-              {(props) => <Family {...props} family={""} />}
+              {(props) => <FamilyMembers {...props} family={""} />}
             </DrawerNav.Screen>
           </DrawerNav.Navigator>
         )
