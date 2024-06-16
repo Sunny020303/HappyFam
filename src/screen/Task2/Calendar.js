@@ -97,11 +97,12 @@ export default function Calendar() {
           navigation.navigate('View Activity', {
             activityId: reservation.id,
           });
+          console.log("Activity: " + reservation.id)
         }}
       >
         {
           reservation.image !== 'No image' && (
-            <Card.Cover style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }} source={{ uri: reservation.image }}></Card.Cover>
+            <Card.Cover style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}source={{ uri: `${reservation.image}?${new Date().getTime()}` }} ></Card.Cover>
           )
         }
         <Card.Title title={reservation.name} subtitle={reservation.day}></Card.Title>

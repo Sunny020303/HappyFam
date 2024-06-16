@@ -13,6 +13,7 @@ import {
   List,
   IconButton,
   Title,
+  ActivityIndicator,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { FontSize, Color, StyleVariable } from "../../GlobalStyles";
@@ -23,11 +24,12 @@ import picture from "../../images/activity.jpg"
 import { useIsFocused } from "@react-navigation/native";
 import { AppState } from "react-native";
 import { Dimensions } from 'react-native';
-import useUser from "../../hooks/UserHook/useGetUser"; 
+import useUser from "../../hooks/UserHook/useGetUser";
+import userGetActivityById from "../../hooks/ActivityHook/useGetActivityById";
 
 const screenWidth = Dimensions.get('window').width;
 
-export default function Activity({ navigation }) {
+export default function Activity({ route, navigation }) {
   const isFocus = useIsFocused();
   const user = useUser();
   const [title, setTitle] = useState("");
@@ -105,9 +107,9 @@ export default function Activity({ navigation }) {
 
 
   //image chosing
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState("No image");
   //const [image2, setImage2] = useState(null);
-   const [height,setHeight]= useState(0);
+  const [height, setHeight] = useState(0);
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const showDialog = () => setDialogVisible(true);
@@ -133,7 +135,6 @@ export default function Activity({ navigation }) {
       // })
       //setImage(formData);
       //setImage2(result.assets[0].base64);
-      setHeight(screenWidth*(result.assets[0].height/result.assets[0].width))
       setImage(result.assets[0].uri);
     }
   };
@@ -148,7 +149,6 @@ export default function Activity({ navigation }) {
     });
 
     if (!result.canceled) {
-      setHeight(screenWidth*(result.assets[0].height/result.assets[0].width))
       setImage(result.assets[0].uri);
     }
   };
@@ -163,14 +163,13 @@ export default function Activity({ navigation }) {
       id_family: 'cadb52ea-9d5a-47ba-af1a-3e1f6599aa5c',
       id_member: ['19f45d36-9313-4eb1-a77b-f88608603d27'],
       location: location,
-      image: image,
+      image: (image==="No image"|| image.includes("https")) ? null : image,
       note: note,
     },
-    "",
+    route.params?.activity.id,
   );
 
   if (createActivity.isSuccess) {
-    //console.log("hello");
     //console.log(createActivity.data);
     navigation.navigate('Calendar');
     //console.log(image);
@@ -182,29 +181,61 @@ export default function Activity({ navigation }) {
   //Appbar button
   React.useEffect(() => {
 
-
-
     navigation.setOptions({
       headerRight: () => (
         <IconButton onPress={() => createActivity.mutate()} icon='check' />
       ),
     });
     createActivity.reset();
-    setTitle("");
-    setWithWho("Everyone");
-    setVisible("Everyone");
-    setRepeat({ value: 0, unit: "day" });
-    setRemind({ value: 0, unit: "minute" });
-    setLocation("");
-    setNote("");
-    setBegin(new Date());
-    setEnd(new Date());
-    setAllDay(false);
-    setRange({ startDate: undefined, endDate: undefined });
-    setImage(null)
+    if (route.params?.activity) {
+      setTitle(route.params?.activity.title)
+      setWithWho("Everyone");
+      setVisible("Everyone");
+      setRepeat(route.params?.activity.repeat);
+      setRemind(route.params?.activity.remind);
+      setLocation(route.params?.activity.location);
+      setNote(route.params?.activity.note);
+      setBegin(new Date(route.params?.activity.start));
+      setEnd(new Date(route.params?.activity.end));
+      setAllDay(false);
+      setRange({ startDate: undefined, endDate: undefined });
+      setImage(`${route.params?.activity.image}?${new Date().getTime()}`)
+    } else {
+      setTitle("");
+      setWithWho("Everyone");
+      setVisible("Everyone");
+      setRepeat({ value: 0, unit: "day" });
+      setRemind({ value: 0, unit: "minute" });
+      setLocation("");
+      setNote("");
+      setBegin(new Date());
+      setEnd(new Date());
+      setAllDay(false);
+      setRange({ startDate: undefined, endDate: undefined });
+      setImage("No image")
+    }
 
-    console.log(createActivity);
+    console.log(route.params?.activity)
+    if(!isFocus){
+      setImage("No image");
+    }
   }, [isFocus]);
+
+  React.useEffect(() => {
+    if (image !== "No image") {
+      Image.getSize(image, (width, height) => {
+        setHeight((screenWidth) * (height / width));
+      });
+    }
+  }, [image]);
+  /*React.useEffect(() => {
+    if (activity) {
+      setTitle(activity.data[0].title);
+      console.log("Success " + route.params?.activityId);
+    }
+
+  }, [activity.data]);*/
+
 
   navigation.setOptions({
     headerRight: () => (
@@ -212,6 +243,13 @@ export default function Activity({ navigation }) {
     ),
   });
 
+  /*if (activity.isFetching) {
+    return (
+      <View style={{ alignItems: "center", justifyContent: "center", height: "100%", width: "100%" }}>
+        <ActivityIndicator animating={true} color='blue' size="large"></ActivityIndicator>
+      </View>
+    )
+  }*/
   return (
     <ScrollView
       style={styles.container}
@@ -395,12 +433,12 @@ export default function Activity({ navigation }) {
 
       <View style={[styles.viewComponent]}>
         <TouchableRipple onPress={showDialog}>
-          {image ? (
-            <View style={{ justifyContent: "center", alignItems: "center"}}>
+          {image!=="No image" ? (
+            <View style={{ justifyContent: "center", alignItems: "center" }}>
               <Image
                 resizeMode="cover"
-                source={{ uri: image }}
-                style={{ width: "100%" , height: height}}
+                source={{uri: image}}
+                style={{ width: "100%", height: height }}
               >
               </Image>
             </View>

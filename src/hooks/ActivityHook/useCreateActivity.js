@@ -76,7 +76,7 @@ const createActivity = async (activity, id_activity) => {
                 .eq('id', id)
                 .select();
 
-           
+
 
 
             if (error) {
@@ -85,8 +85,61 @@ const createActivity = async (activity, id_activity) => {
             return data2;
         }
 
+    } else {
+        if (activity.image == null) {
+            const { data, error } = await supabase
+                .from('activity')
+                .upsert({
+                    id: id_activity,
+                    title: activity.title,
+                    start: activity.start,
+                    end: activity.end,
+                    repeat: activity.repeat,
+                    remind: activity.remind,
+                    id_family: activity.id_family,
+                    id_member: activity.id_member,
+                    location: activity.location,
+                    note: activity.note,
+                })
+                .select()
+            if (error) {
+                throw error;
+            }
+            return data;
+        } else {
+            const base64 = await FileSystem.readAsStringAsync(activity.image, { encoding: 'base64' });
+
+            const {data: img , error: imageError} = await supabase.storage.from('activityPics').upload(`public/${id_activity}.png`, decode(base64), {
+                upsert: true,
+                contentType: 'image/png',
+            });
+
+            if(imageError) {
+                throw imageError;
+            }
+            const { data, error } = await supabase
+                .from('activity')
+                .upsert({
+                    id: id_activity,
+                    title: activity.title,
+                    start: activity.start,
+                    end: activity.end,
+                    repeat: activity.repeat,
+                    remind: activity.remind,
+                    id_family: activity.id_family,
+                    id_member: activity.id_member,
+                    location: activity.location,
+                    note: activity.note,
+                    image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/' +id_activity +'.png'
+                })
+                .select()
+            if (error) {
+                throw error;
+            }
+            return data;
+
+        }
     }
-    return data;
 
 }
 
