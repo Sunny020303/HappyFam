@@ -22,7 +22,7 @@ export default Gallery = () => {
         setImages(
           data.map((item) => ({
             name: `public/${item.name}`,
-            uri: `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/${item.name}`,
+            uri: `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/${item.name}?${Date.now()}`,
           })),
         );
     }

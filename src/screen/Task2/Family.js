@@ -389,13 +389,11 @@ const FamilySettings = ({ family, navigation, route }) => {
   if (GetFamily.isError) console.log(GetFamily.error);
   const DeleteFamily = useDeleteFamily(family);
 
-  const [image, setImage] = useState("");
-  const [name, setName] = useState("");
+  const [image, setImage] = useState(`${GetFamily.data?.image}?${Date.now()}`);
+  const [imageUrl, setImageUrl] = useState("");
+  const [name, setName] = useState(GetFamily.data?.name);
 
-  const updateFamilyImage = useUpdateFamilyImage(
-    family,
-    `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/Family-${family}.jpg`,
-  );
+  const updateFamilyImage = useUpdateFamilyImage(family, imageUrl);
   if (updateFamilyImage.isError) console.log(updateFamilyImage.error);
   const updateFamilyName = useUpdateFamilyName(family, name);
   if (updateFamilyName.isError) console.log(updateFamilyName.error);
@@ -416,17 +414,20 @@ const FamilySettings = ({ family, navigation, route }) => {
   });
 
   const uploadImage = async () => {
-    if (image) {
-      const arraybuffer = await fetch(image).then((res) => res.arrayBuffer());
-      const { error } = await supabase.storage
-        .from("activityPics")
-        .upload(`public/Family-${family}.jpg`, arraybuffer, { upsert: true });
-      if (error) {
-        Alert.alert("Upload image error", error.message);
-        return;
-      }
-      updateFamilyImage.mutate();
+    const arraybuffer = await fetch(image).then((res) => res.arrayBuffer());
+    const { error } = await supabase.storage
+      .from("activityPics")
+      .upload(`public/Family-${family}.jpg`, arraybuffer, {
+        upsert: true,
+        contentType: "image/jpeg",
+      });
+    if (error) {
+      Alert.alert("Upload image error", error.message);
+      return;
     }
+    setImageUrl(
+      `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/Family-${family}.jpg`,
+    );
   };
 
   const pickImage = async () => {
@@ -437,10 +438,7 @@ const FamilySettings = ({ family, navigation, route }) => {
       aspect: [1, 1],
     });
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-      uploadImage();
-    }
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   const takePhoto = async () => {
@@ -453,11 +451,7 @@ const FamilySettings = ({ family, navigation, route }) => {
       aspect: [1, 1],
     });
 
-    if (!result.canceled)
-      if (!result.canceled) {
-        setImage(result.assets[0].uri);
-        uploadImage();
-      }
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   const deleteImage = () => {
@@ -471,7 +465,16 @@ const FamilySettings = ({ family, navigation, route }) => {
         },
         {
           text: "DELETE",
-          onPress: () => setImage(null),
+          onPress: async () => {
+            const { error } = await supabase.storage
+              .from("activityPics")
+              .remove(`public/Family-${family}.jpg`);
+
+            if (error) Alert.alert("Error deleting image", error.message);
+            setImage(null);
+            setImageUrl(null);
+            updateFamilyImage.mutate();
+          },
         },
       ],
     );
@@ -488,6 +491,12 @@ const FamilySettings = ({ family, navigation, route }) => {
       setLoading(false);
       return false;
     }
+    if (email !== user.data?.email) {
+      setLoading(false);
+      Alert.alert("Error", "Your credentials are not valid");
+      return false;
+    }
+
     const { data } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -501,7 +510,7 @@ const FamilySettings = ({ family, navigation, route }) => {
     } else {
       Alert.alert(
         "Error",
-        "Your credential is not valid. For safety concerns, you need to re-log",
+        "Your credentials are not valid. For safety concerns, you need to re-log",
       );
       const { logouterror } = await supabase.auth.signOut();
       if (logouterror) Alert.alert("Log out error", logouterror.message);
@@ -522,7 +531,6 @@ const FamilySettings = ({ family, navigation, route }) => {
         )
       )
         errors.email = "Email a valid email";
-      else if (email !== user.data?.email) errors.email = "Enter your email";
     }
 
     if (!checkInitialState.password) {
@@ -538,18 +546,26 @@ const FamilySettings = ({ family, navigation, route }) => {
   };
 
   React.useEffect(() => {
+    if (GetFamily.isSuccess && GetFamily.data) {
+      setImage(`${GetFamily.data.image}?${Date.now()}`);
+      setName(GetFamily.data.name);
+    }
+  }, [GetFamily.isSuccess]);
+
+  React.useEffect(() => {
+    if (image) uploadImage();
+  }, [image]);
+
+  React.useEffect(() => {
+    if (imageUrl) updateFamilyImage.mutate();
+  }, [imageUrl]);
+
+  React.useEffect(() => {
     if (updateFamilyImage.isSuccess || updateFamilyName.isSuccess) {
       GetFamily.refetch();
       queryClient.invalidateQueries("Family");
     }
   }, [updateFamilyImage.isSuccess, updateFamilyName.isSuccess]);
-
-  React.useEffect(() => {
-    if (GetFamily.isSuccess && GetFamily.data) {
-      setName(GetFamily.data[0].name);
-      setImage(GetFamily.data[0].image);
-    }
-  }, [GetFamily.isSuccess]);
 
   // When the keyboard is hidden, dismiss it instead
   React.useEffect(() => {
@@ -591,7 +607,7 @@ const FamilySettings = ({ family, navigation, route }) => {
           <View>
             <Image
               source={{ uri: image }}
-              style={{ marginVertical: 20, width: 300, height: 300 }}
+              style={{ marginVertical: 20, width: 250, height: 250 }}
             />
             <Button
               icon="plus"
@@ -606,11 +622,11 @@ const FamilySettings = ({ family, navigation, route }) => {
           <View style={{ marginVertical: 20 }}>
             <View
               style={{
-                width: 300,
+                width: 250,
                 backgroundColor: Color.materialThemeSysLightSurfaceDim,
               }}
             >
-              <Icon source="account-multiple" size={300} />
+              <Icon source="account-multiple" size={250} />
             </View>
             <Button
               icon="plus"

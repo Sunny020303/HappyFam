@@ -5,7 +5,7 @@ const updateFamilyImage = async (id, image) => {
   const { error } = await supabase
     .from("family")
     .update({
-      name: image,
+      image: image,
     })
     .eq("id", id);
   if (error) {

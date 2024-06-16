@@ -85,7 +85,10 @@ const SignUp = () => {
       const arraybuffer = await fetch(image).then((res) => res.arrayBuffer());
       const { error } = await supabase.storage
         .from("avatar")
-        .upload(`public/${email}.jpg`, arraybuffer, { upsert: true });
+        .upload(`public/${email}.jpg`, arraybuffer, {
+          upsert: true,
+          contentType: "image/jpeg",
+        });
       if (error) {
         Alert.alert("Upload avatar error", error.message);
         setLoading(false);
