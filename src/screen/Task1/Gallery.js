@@ -2,12 +2,25 @@ import React, { useEffect, useState } from "react";
 import { Alert, FlatList, Image, View, StyleSheet } from "react-native";
 import { Button, Icon, TouchableRipple } from "react-native-paper";
 import ImageViewing from "react-native-image-viewing";
+import * as Sharing from "expo-sharing";
 import { supabase } from "../../lib/supabase";
+import * as MediaLibrary from "expo-media-library";
+import * as FileSystem from "expo-file-system";
 
 export default Gallery = () => {
   const [currentImageIndex, setImageIndex] = useState(0);
   const [images, setImages] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
+  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
+
+  const saveFile = async (fileUri) => {
+    if (permissionResponse.status !== "granted") await requestPermission();
+    else {
+      const asset = await MediaLibrary.createAssetAsync(fileUri);
+      await MediaLibrary.createAlbumAsync("Download", asset, false);
+      return fileUri;
+    }
+  };
 
   useEffect(() => {
     async function fetchImages() {
@@ -21,7 +34,7 @@ export default Gallery = () => {
       else
         setImages(
           data.map((item) => ({
-            name: `public/${item.name}`,
+            name: item.name,
             uri: `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/${item.name}?${Date.now()}`,
           })),
         );
@@ -57,6 +70,7 @@ export default Gallery = () => {
         imageIndex={currentImageIndex}
         visible={isVisible}
         onRequestClose={onRequestClose}
+        onImageIndexChange={setImageIndex}
         HeaderComponent={() => {
           return (
             <View style={styles.container}>
@@ -74,7 +88,21 @@ export default Gallery = () => {
                     <Icon source="tray-arrow-down" size={24} color="#fff" />
                   )}
                   style={styles.closeButton}
-                  onPress={onRequestClose}
+                  onPress={() => {
+                    FileSystem.downloadAsync(
+                      images[currentImageIndex].uri,
+                      FileSystem.documentDirectory +
+                        images[currentImageIndex].name,
+                    )
+                      .then(async ({ uri }) => {
+                        if (await saveFile(uri))
+                          Alert.alert(
+                            "Image saved successfully",
+                            "Image saved to Download folder",
+                          );
+                      })
+                      .catch((error) => console.log(error));
+                  }}
                 />
                 <Button
                   icon={({ size, color }) => (
@@ -85,7 +113,18 @@ export default Gallery = () => {
                     />
                   )}
                   style={styles.closeButton}
-                  onPress={onRequestClose}
+                  onPress={() => {
+                    FileSystem.downloadAsync(
+                      images[currentImageIndex].uri,
+                      FileSystem.documentDirectory +
+                        images[currentImageIndex].name,
+                    )
+                      .then(
+                        async ({ uri }) =>
+                          await Sharing.shareAsync(await saveFile(uri)),
+                      )
+                      .catch((error) => console.log(error));
+                  }}
                 />
                 <Button
                   icon={({ size, color }) => (

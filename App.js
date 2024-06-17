@@ -324,7 +324,9 @@ function AppContent() {
             <DrawerNav.Screen
               name="View Activity"
               component={ViewActivity}
-              options={({ navigation, route }) => ({})}
+              options={({ navigation, route }) => ({
+                drawerItemStyle: { display: "none" },
+              })}
             />
           </DrawerNav.Navigator>
         ) : (
