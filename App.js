@@ -151,19 +151,18 @@ function AppContent() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      GetFamily.refetch();
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      GetFamily.refetch();
+      if (_event === "SIGNED_IN") GetFamily.refetch();
     });
   }, []);
 
   return (
     <NavigationContainer>
       {session && session.user ? (
-        GetFamily && GetFamily.data && GetFamily.data.length > 0 ? (
+        GetFamily && GetFamily.data ? (
           <DrawerNav.Navigator
             id="Drawer"
             drawerContent={DrawerContent}
@@ -255,15 +254,10 @@ function AppContent() {
             <DrawerNav.Screen
               name="Family"
               options={({ navigation, route }) => ({
-                title: GetFamily.data[0].family.name,
+                title: GetFamily.data.family.name,
                 headerStyle: {
                   backgroundColor: theme.colors.primaryContainer,
                 },
-                headerRight: () => (
-                  <View style={{ flexDirection: "row" }}>
-                    <IconButton icon="check" />
-                  </View>
-                ),
                 drawerIcon: ({ color, size, focused }) => (
                   <Icon
                     source={
@@ -276,7 +270,11 @@ function AppContent() {
               })}
             >
               {(props) => (
-                <Family {...props} family={GetFamily.data[0].id_family} />
+                <Family
+                  {...props}
+                  family={GetFamily.data.id_family}
+                  role={GetFamily.data.role}
+                />
               )}
             </DrawerNav.Screen>
 
@@ -353,7 +351,7 @@ function AppContent() {
               name="Create or Join a Family!"
               options={({ navigation, route }) => {}}
             >
-              {(props) => <FamilyMembers {...props} family={""} />}
+              {(props) => <FamilyMembers {...props} family={""} role={0} />}
             </DrawerNav.Screen>
           </DrawerNav.Navigator>
         )

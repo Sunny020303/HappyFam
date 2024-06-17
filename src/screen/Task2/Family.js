@@ -18,6 +18,7 @@ import {
   HelperText,
   Icon,
   IconButton,
+  Switch,
   TextInput,
   Portal,
   Dialog,
@@ -35,18 +36,38 @@ import useGetFamily from "../../hooks/FamilyHook/useGetFamily";
 import useUpdateFamilyImage from "../../hooks/FamilyHook/useUpdateFamilyImage";
 import useUpdateFamilyName from "../../hooks/FamilyHook/useUpdateFamilyName";
 import useDeleteFamily from "../../hooks/FamilyHook/useDeleteFamily";
+import useUpdateMemberRole from "../../hooks/FamilyHook/useUpdateMemberRole";
+import useDeleteMember from "../../hooks/FamilyHook/useDeleteMember";
 import * as ImagePicker from "expo-image-picker";
 import { Color, FontSize, Padding, StyleVariable } from "../../GlobalStyles";
 
 const Stack = createNativeStackNavigator();
 
-export default Family = ({ family, navigation, route }) => {
+export default Family = ({ family, role, navigation, route }) => {
   const theme = useTheme();
+  const [roleToggle, setRoleToggle] = useState(false);
+  const [manageMember, setManageMember] = useState(false);
 
-  family
+  family && role
     ? navigation.setOptions({
         headerRight: () => (
           <View style={{ flexDirection: "row" }}>
+            <IconButton
+              onPress={() => {
+                setManageMember(false);
+                setRoleToggle(!roleToggle);
+              }}
+              mode={roleToggle ? "contained" : "elevated"}
+              icon="crown-outline"
+            />
+            <IconButton
+              onPress={() => {
+                setRoleToggle(false);
+                setManageMember(!manageMember);
+              }}
+              mode={manageMember ? "contained" : "elevated"}
+              icon="minus-circle-outline"
+            />
             <IconButton
               onPress={() => navigation.navigate("Family Settings")}
               icon="cog-outline"
@@ -64,7 +85,14 @@ export default Family = ({ family, navigation, route }) => {
           headerShown: false,
         })}
       >
-        {(props) => <FamilyMembers {...props} family={family} />}
+        {(props) => (
+          <FamilyMembers
+            {...props}
+            family={family}
+            roleToggle={roleToggle}
+            manageMemberToggle={manageMember}
+          />
+        )}
       </Stack.Screen>
       <Stack.Screen
         name="Family Settings"
@@ -79,7 +107,13 @@ export default Family = ({ family, navigation, route }) => {
   );
 };
 
-export const FamilyMembers = ({ family, navigation, route }) => {
+export const FamilyMembers = ({
+  family,
+  roleToggle,
+  manageMemberToggle,
+  navigation,
+  route,
+}) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
 
@@ -160,7 +194,6 @@ export const FamilyMembers = ({ family, navigation, route }) => {
       setAddMemberConfirm(true);
     }
   }, [createInvitation.isSuccess]);
-
   return (
     <SafeAreaView>
       <ScrollView contentContainerStyle={styles.scrollView}>
@@ -168,13 +201,21 @@ export const FamilyMembers = ({ family, navigation, route }) => {
           <>
             {familyList.data.map((item) => (
               <MemberCard
-                familyRole={
+                familyId={item.id_family}
+                memberId={item.id_member}
+                title={
                   item.family_role && item.family_role !== ""
                     ? item.family_role
-                    : item.profiles.first_name
+                    : item.first_name
                 }
-                role={item.role ? "Admin" : ""}
-                image={item.profiles.avatar ?? null}
+                role={item.role}
+                image={
+                  item.profiles.avatar
+                    ? `${item.profiles.avatar}?${Date.now()}`
+                    : null
+                }
+                roleToggle={roleToggle}
+                manageMemberToggle={manageMemberToggle}
               />
             ))}
             <Card
@@ -211,7 +252,11 @@ export const FamilyMembers = ({ family, navigation, route }) => {
                 user={user}
                 name={item.family?.name ?? ""}
                 expiration={`expire in ${Math.round((new Date(item.created_at) - new Date()) / (1000 * 60 * 60 * 24)) + 30} days`}
-                image={item.family.image ?? null}
+                image={
+                  item.family.image
+                    ? `${item.family.image}?${Date.now()}`
+                    : null
+                }
                 role={item.role}
               />
             ))}
@@ -311,9 +356,6 @@ export const FamilyMembers = ({ family, navigation, route }) => {
                 value={email}
                 onChangeText={(e) => {
                   setEmail(e);
-                  validateEmail();
-                }}
-                onBlur={() => {
                   setInitialState({
                     ...checkInitialState,
                     email: false,
@@ -563,7 +605,6 @@ const FamilySettings = ({ family, navigation, route }) => {
   React.useEffect(() => {
     if (updateFamilyImage.isSuccess || updateFamilyName.isSuccess) {
       GetFamily.refetch();
-      queryClient.invalidateQueries("Family");
     }
   }, [updateFamilyImage.isSuccess, updateFamilyName.isSuccess]);
 
@@ -607,7 +648,7 @@ const FamilySettings = ({ family, navigation, route }) => {
           <View>
             <Image
               source={{ uri: image }}
-              style={{ marginVertical: 20, width: 250, height: 250 }}
+              style={{ marginBottom: 20, width: 250, height: 250 }}
             />
             <Button
               icon="plus"
@@ -619,7 +660,7 @@ const FamilySettings = ({ family, navigation, route }) => {
             </Button>
           </View>
         ) : (
-          <View style={{ marginVertical: 20 }}>
+          <View style={{ marginBottom: 20 }}>
             <View
               style={{
                 width: 250,
@@ -691,9 +732,6 @@ const FamilySettings = ({ family, navigation, route }) => {
                 value={email}
                 onChangeText={(e) => {
                   setEmail(e);
-                  validateLogin();
-                }}
-                onBlur={() => {
                   setInitialState({ ...checkInitialState, email: false });
                   validateLogin();
                 }}
@@ -720,9 +758,6 @@ const FamilySettings = ({ family, navigation, route }) => {
                 value={password}
                 onChangeText={(e) => {
                   setPassword(e);
-                  validateLogin();
-                }}
-                onBlur={() => {
                   setInitialState({ ...checkInitialState, password: false });
                   validateLogin();
                 }}
@@ -812,7 +847,12 @@ const InviteCard = (props) => {
             subtitle={props.expiration}
             left={() => {
               if (props.image && props.image !== "none")
-                return <Icon source={{ uri: props.image }} size={70} />;
+                return (
+                  <Image
+                    source={{ uri: props.image }}
+                    style={{ width: 70, height: 70 }}
+                  />
+                );
               else return <Icon source="account" size={70}></Icon>;
             }}
             leftStyle={{
@@ -905,34 +945,152 @@ const InviteCard = (props) => {
 };
 
 const MemberCard = (props) => {
+  const user = useUser();
+  const queryClient = useQueryClient();
   const theme = useTheme();
   const styles = makeStyles(theme);
 
+  const [focus, setFocus] = useState(false);
+  const [role, setRole] = useState(props.role);
+  const [isCurrentUser, setIsCurrentUser] = useState(
+    props.memberId === user.data?.id,
+  );
+  const [dialogVisible, setDialogVisible] = useState(false);
+
+  const UpdateMemberRole = useUpdateMemberRole(props.memberId, role);
+  if (UpdateMemberRole.isError) console.log(error);
+  const DeleteMember = useDeleteMember(props.familyId, props.memberId);
+  if (DeleteMember.isError) console.log(error);
+
+  React.useEffect(() => {
+    UpdateMemberRole.mutate();
+  }, [role]);
+
+  React.useEffect(() => {
+    if (DeleteMember.isSuccess) {
+      isCurrentUser
+        ? queryClient.invalidateQueries("Family")
+        : queryClient.invalidateQueries("FamilyMemberList");
+      setDialogVisible(false);
+    }
+  }, [UpdateMemberRole.isSuccess, DeleteMember.isSuccess]);
+
+  React.useEffect(() => {
+    setIsCurrentUser(props.memberId === user.data?.id);
+  }, [user]);
+
   return (
-    <Card style={styles.cardMember}>
-      <Card.Title
-        title={props.familyRole}
-        subtitle={props.role}
-        left={() => {
-          if (props.image && props.image !== "none")
-            return <Icon source={{ uri: props.image }} size={70} />;
-          else return <Icon source="account" size={70}></Icon>;
-        }}
-        leftStyle={{
-          height: "70px",
-          width: "70px",
-          marginTop: 15,
-          borderRadius: 10,
-        }}
-        titleStyle={{
-          height: 50,
-          paddingTop: 25,
-          fontSize: 30,
-          fontWeight: "bold",
-        }}
-        subtitleStyle={{ height: 30, paddingTop: 5, fontSize: 20 }}
-      />
-    </Card>
+    <>
+      <TouchableOpacity activeOpacity={1} onPress={() => setFocus(!focus)}>
+        <Card style={styles.cardMember}>
+          <Card.Title
+            title={props.title}
+            subtitle={role ? "Admin" : ""}
+            left={() => {
+              if (props.image)
+                return (
+                  <Image
+                    source={{ uri: props.image }}
+                    style={{ height: 70, width: 70 }}
+                  />
+                );
+              else return <Icon source="account" size={70}></Icon>;
+            }}
+            leftStyle={{
+              height: "70px",
+              width: "70px",
+              marginTop: 15,
+              borderRadius: 10,
+            }}
+            right={() => {
+              if (props.roleToggle)
+                return (
+                  !isCurrentUser && (
+                    <Switch value={role} onValueChange={setRole} />
+                  )
+                );
+              if (props.manageMemberToggle)
+                return (
+                  <Button
+                    mode="text"
+                    textColor={theme.colors.error}
+                    onPress={() => setDialogVisible(true)}
+                  >
+                    {isCurrentUser ? "LEAVE" : "REMOVE"}
+                  </Button>
+                );
+              if (isCurrentUser && !props.role && focus)
+                return (
+                  <Button
+                    mode="text"
+                    textColor={theme.colors.error}
+                    onPress={() => setDialogVisible(true)}
+                  >
+                    LEAVE
+                  </Button>
+                );
+            }}
+            rightStyle={{ marginTop: 15 }}
+            titleStyle={{
+              height: 50,
+              paddingTop: 25,
+              fontSize: 30,
+              fontWeight: "bold",
+            }}
+            subtitleStyle={{ height: 30, paddingTop: 5, fontSize: 20 }}
+          />
+        </Card>
+      </TouchableOpacity>
+
+      <Portal>
+        {isCurrentUser ? (
+          <Dialog
+            visible={dialogVisible}
+            onDismiss={() => setDialogVisible(false)}
+          >
+            <Dialog.Title>Leave Family</Dialog.Title>
+            <Dialog.Content>
+              <Text variant="bodyMedium">
+                Are you sure you want to leave the family? The family will also
+                be deleted if you are the only member.
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setDialogVisible(false)}>CANCEL</Button>
+              <Button
+                mode="contained"
+                onPress={DeleteMember.mutate}
+                buttonColor={theme.colors.error}
+              >
+                LEAVE
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        ) : (
+          <Dialog
+            visible={dialogVisible}
+            onDismiss={() => setDialogVisible(false)}
+          >
+            <Dialog.Title>Remove Member</Dialog.Title>
+            <Dialog.Content>
+              <Text variant="bodyMedium">
+                Are you sure you want to remove {props.title} from the family?
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setDialogVisible(false)}>CANCEL</Button>
+              <Button
+                mode="contained"
+                onPress={DeleteMember.mutate}
+                buttonColor={theme.colors.error}
+              >
+                REMOVE
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        )}
+      </Portal>
+    </>
   );
 };
 

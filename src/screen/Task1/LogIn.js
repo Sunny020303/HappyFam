@@ -57,6 +57,7 @@ const LogIn = () => {
     });
 
     if (error) Alert.alert("Log in error", error.message);
+
     setLoading(false);
     return !error;
   }
@@ -155,9 +156,6 @@ const LogIn = () => {
           value={email}
           onChangeText={(e) => {
             setEmail(e);
-            validateLogin();
-          }}
-          onBlur={() => {
             setInitialState({ ...checkInitialState, email: false });
             validateLogin();
           }}
@@ -184,9 +182,6 @@ const LogIn = () => {
           value={password}
           onChangeText={(e) => {
             setPassword(e);
-            validateLogin();
-          }}
-          onBlur={() => {
             setInitialState({ ...checkInitialState, password: false });
             validateLogin();
           }}
@@ -233,9 +228,6 @@ const LogIn = () => {
               value={resetEmail}
               onChangeText={(e) => {
                 setResetEmail(e);
-                validateResetEmail();
-              }}
-              onBlur={() => {
                 setInitialState({ ...checkInitialState, resetEmail: false });
                 validateResetEmail();
               }}

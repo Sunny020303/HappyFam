@@ -14,10 +14,10 @@ const getFamilyMemberById = async (id_member) => {
   if (error) {
     throw new Error(error.message);
   }
-  if (!data) {
+  if (!data || data.length === 0) {
     return null;
   }
-  return data;
+  return data[0];
 };
 
 export default function useGetFamilyMemberById(id_member) {
