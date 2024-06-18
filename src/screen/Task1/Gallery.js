@@ -82,6 +82,7 @@ export default Gallery = () => {
                 onPress={onRequestClose}
               />
               <View style={{ flexGrow: 1 }} />
+              <View style={{ flexGrow: 1 }} />
               <View style={styles.endButtons}>
                 <Button
                   icon={({ size, color }) => (
@@ -126,13 +127,6 @@ export default Gallery = () => {
                       .catch((error) => console.log(error));
                   }}
                 />
-                <Button
-                  icon={({ size, color }) => (
-                    <Icon source="trash-can-outline" size={24} color="#fff" />
-                  )}
-                  style={styles.closeButton}
-                  onPress={onRequestClose}
-                />
               </View>
             </View>
           );
@@ -160,7 +154,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flex: 1,
     justifyContent: "space-around",
-    alignItems: "center",
   },
   listRoot: { flexGrow: 0 },
   listContainer: { flex: 0 },

@@ -236,11 +236,6 @@ function AppContent() {
                 headerStyle: {
                   backgroundColor: theme.colors.primaryContainer,
                 },
-                headerRight: () => (
-                  <View style={{ flexDirection: "row" }}>
-                    <IconButton icon="check" />
-                  </View>
-                ),
                 drawerIcon: ({ color, size, focused }) => (
                   <Icon
                     source={focused ? "image-album" : "image-album"}

@@ -209,11 +209,7 @@ export const FamilyMembers = ({
                     : item.first_name
                 }
                 role={item.role}
-                image={
-                  item.profiles.avatar
-                    ? `${item.profiles.avatar}?${Date.now()}`
-                    : null
-                }
+                image={item.profiles.avatar ?? null}
                 roleToggle={roleToggle}
                 manageMemberToggle={manageMemberToggle}
               />
@@ -252,11 +248,7 @@ export const FamilyMembers = ({
                 user={user}
                 name={item.family?.name ?? ""}
                 expiration={`expire in ${Math.round((new Date(item.created_at) - new Date()) / (1000 * 60 * 60 * 24)) + 30} days`}
-                image={
-                  item.family.image
-                    ? `${item.family.image}?${Date.now()}`
-                    : null
-                }
+                image={item.family.image ?? null}
                 role={item.role}
               />
             ))}
@@ -820,6 +812,9 @@ const InviteCard = (props) => {
 
   const [acceptToggle, setAcceptToggle] = useState(false);
   const [dismissToggle, setDismissToggle] = useState(false);
+  const [image, setImage] = useState(
+    props.image ? `${props.image}?${Date.now()}` : null,
+  );
 
   const joinFamily = useJoinFamily(
     props.id,
@@ -846,10 +841,10 @@ const InviteCard = (props) => {
             title={props.name}
             subtitle={props.expiration}
             left={() => {
-              if (props.image && props.image !== "none")
+              if (image)
                 return (
                   <Image
-                    source={{ uri: props.image }}
+                    source={{ uri: image }}
                     style={{ width: 70, height: 70 }}
                   />
                 );
@@ -951,6 +946,9 @@ const MemberCard = (props) => {
   const styles = makeStyles(theme);
 
   const [focus, setFocus] = useState(false);
+  const [image, setImage] = useState(
+    props.image ? `${props.image}?${Date.now()}` : null,
+  );
   const [role, setRole] = useState(props.role);
   const [isCurrentUser, setIsCurrentUser] = useState(
     props.memberId === user.data?.id,
@@ -987,10 +985,10 @@ const MemberCard = (props) => {
             title={props.title}
             subtitle={role ? "Admin" : ""}
             left={() => {
-              if (props.image)
+              if (image)
                 return (
                   <Image
-                    source={{ uri: props.image }}
+                    source={{ uri: image }}
                     style={{ height: 70, width: 70 }}
                   />
                 );
