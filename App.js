@@ -267,7 +267,7 @@ function AppContent() {
               {(props) => (
                 <Family
                   {...props}
-                  family={GetFamily.data.id_family}
+                  family={GetFamily.data}
                   role={GetFamily.data.role}
                 />
               )}

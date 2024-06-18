@@ -38,6 +38,7 @@ import useUpdateFamilyImage from "../../hooks/FamilyHook/useUpdateFamilyImage";
 import useUpdateFamilyName from "../../hooks/FamilyHook/useUpdateFamilyName";
 import useDeleteFamily from "../../hooks/FamilyHook/useDeleteFamily";
 import useUpdateMemberRole from "../../hooks/FamilyHook/useUpdateMemberRole";
+import useUpdateMemberFamilyRole from "../../hooks/FamilyHook/useUpdateMemberFamilyRole";
 import useDeleteMember from "../../hooks/FamilyHook/useDeleteMember";
 import * as ImagePicker from "expo-image-picker";
 import { Color, FontSize, Padding, StyleVariable } from "../../GlobalStyles";
@@ -145,13 +146,13 @@ export const FamilyMembers = ({
   const [checkInitialState, setInitialState] = useState({ email: true });
 
   const invitationList = useGetInvitationList(user.data?.email);
-  const familyList = useGetFamilyMemberList(family);
+  const familyList = useGetFamilyMemberList(family.id_family);
 
   const createFamily = useCreateFamily(user.data?.id, newFamilyName);
   if (createFamily.isSuccess) queryClient.invalidateQueries("Family");
   if (createFamily.isError) console.log(createFamily.error);
 
-  const createInvitation = useCreateInvitation(family, email, role);
+  const createInvitation = useCreateInvitation(family.id_family, email, role);
   if (createInvitation.isError) console.log(createInvitation.error);
 
   const handleAddMember = () => {
@@ -420,18 +421,34 @@ const FamilySettings = ({ family, navigation, route }) => {
 
   const queryClient = useQueryClient();
   const user = useUser();
-  const GetFamily = useGetFamily(family);
+  const GetFamily = useGetFamily(family.id_family);
   if (GetFamily.isError) console.log(GetFamily.error);
-  const DeleteFamily = useDeleteFamily(family);
+  const DeleteFamily = useDeleteFamily(family.id_family);
 
-  const [image, setImage] = useState(`${GetFamily.data?.image}?${Date.now()}`);
+  const [image, setImage] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [name, setName] = useState(GetFamily.data?.name);
+  const [name, setName] = useState("");
+  const [nameChanged, setNameChanged] = useState(false);
+  const [familyRole, setFamilyRole] = useState(family.family_role);
+  const [roleChanged, setRoleChanged] = useState(false);
+  const [initialImage, setInitialImage] = useState(true);
+  const [initial, setInitial] = useState(true);
 
-  const updateFamilyImage = useUpdateFamilyImage(family, imageUrl);
-  if (updateFamilyImage.isError) console.log(updateFamilyImage.error);
-  const updateFamilyName = useUpdateFamilyName(family, name);
-  if (updateFamilyName.isError) console.log(updateFamilyName.error);
+  const updateFamilyImage = useUpdateFamilyImage(family.id_family, imageUrl);
+  if (updateFamilyImage.isError) {
+    setLoading(false);
+    Alert.alert(updateFamilyImage.error.message);
+  }
+  const updateFamilyName = useUpdateFamilyName(family.id_family, name);
+  if (updateFamilyName.isError) {
+    setLoading(false);
+    Alert.alert(updateFamilyName.error.message);
+  }
+  const updateFamilyRole = useUpdateMemberFamilyRole(user.data?.id, familyRole);
+  if (updateFamilyRole.isError) {
+    setLoading(false);
+    Alert.alert(updateFamilyRole.error.message);
+  }
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const showDialog = () => setDialogVisible(true);
@@ -452,16 +469,17 @@ const FamilySettings = ({ family, navigation, route }) => {
     const arraybuffer = await fetch(image).then((res) => res.arrayBuffer());
     const { error } = await supabase.storage
       .from("activityPics")
-      .upload(`public/Family-${family}.jpg`, arraybuffer, {
+      .upload(`public/Family-${family.id_family}.jpg`, arraybuffer, {
         upsert: true,
         contentType: "image/jpeg",
       });
     if (error) {
       Alert.alert("Upload image error", error.message);
+      setLoading(false);
       return;
     }
     setImageUrl(
-      `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/Family-${family}.jpg`,
+      `https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/Family-${family.id_family}.jpg`,
     );
   };
 
@@ -473,7 +491,10 @@ const FamilySettings = ({ family, navigation, route }) => {
       aspect: [1, 1],
     });
 
-    if (!result.canceled) setImage(result.assets[0].uri);
+    if (!result.canceled) {
+      setInitialImage(false);
+      setImage(result.assets[0].uri);
+    }
   };
 
   const takePhoto = async () => {
@@ -486,7 +507,10 @@ const FamilySettings = ({ family, navigation, route }) => {
       aspect: [1, 1],
     });
 
-    if (!result.canceled) setImage(result.assets[0].uri);
+    if (!result.canceled) {
+      setInitialImage(false);
+      setImage(result.assets[0].uri);
+    }
   };
 
   const deleteImage = () => {
@@ -503,7 +527,7 @@ const FamilySettings = ({ family, navigation, route }) => {
           onPress: async () => {
             const { error } = await supabase.storage
               .from("activityPics")
-              .remove(`public/Family-${family}.jpg`);
+              .remove(`public/Family-${family.id_family}.jpg`);
 
             if (error) Alert.alert("Error deleting image", error.message);
             setImage(null);
@@ -581,14 +605,20 @@ const FamilySettings = ({ family, navigation, route }) => {
   };
 
   React.useEffect(() => {
-    if (GetFamily.isSuccess && GetFamily.data) {
+    if (initial && GetFamily.isSuccess && GetFamily.data) {
+      setInitial(false);
       setImage(`${GetFamily.data.image}?${Date.now()}`);
       setName(GetFamily.data.name);
     }
+    setLoading(false);
   }, [GetFamily.isSuccess]);
 
   React.useEffect(() => {
-    if (image) uploadImage();
+    if (image && !initialImage) {
+      setInitialImage(true);
+      setLoading(true);
+      uploadImage();
+    }
   }, [image]);
 
   React.useEffect(() => {
@@ -596,10 +626,21 @@ const FamilySettings = ({ family, navigation, route }) => {
   }, [imageUrl]);
 
   React.useEffect(() => {
+    if (updateFamilyName.isSuccess) queryClient.invalidateQueries("Family");
     if (updateFamilyImage.isSuccess || updateFamilyName.isSuccess) {
       GetFamily.refetch();
+      setLoading(false);
     }
   }, [updateFamilyImage.isSuccess, updateFamilyName.isSuccess]);
+
+  React.useEffect(() => {
+    if (updateFamilyRole.isSuccess) {
+      GetFamily.refetch();
+      queryClient.invalidateQueries("FamilyMemberList");
+      queryClient.invalidateQueries("Family");
+      setLoading(false);
+    }
+  }, [updateFamilyRole.isSuccess]);
 
   // When the keyboard is hidden, dismiss it instead
   React.useEffect(() => {
@@ -686,10 +727,43 @@ const FamilySettings = ({ family, navigation, route }) => {
         <TextInput
           mode="flat"
           variant="largeTitle"
+          label="Family Name"
           placeholder="+ Add family name"
           value={name}
-          onChangeText={setName}
-          onBlur={() => updateFamilyName.mutate()}
+          onChangeText={(e) => {
+            setNameChanged(true);
+            setName(e);
+          }}
+          onBlur={() => {
+            if (nameChanged) {
+              setNameChanged(false);
+              setLoading(true);
+              updateFamilyName.mutate();
+            }
+          }}
+          style={{
+            width: 350,
+            backgroundColor: "transparent",
+            fontSize: FontSize.materialThemeTitleLarge_size,
+          }}
+        />
+        <TextInput
+          mode="flat"
+          variant="largeTitle"
+          label="Role"
+          placeholder="What is your role in the family?"
+          value={familyRole}
+          onChangeText={(e) => {
+            setRoleChanged(true);
+            setFamilyRole(e);
+          }}
+          onBlur={() => {
+            if (roleChanged) {
+              setRoleChanged(false);
+              setLoading(true);
+              updateFamilyRole.mutate();
+            }
+          }}
           style={{
             width: 350,
             backgroundColor: "transparent",
@@ -775,7 +849,6 @@ const FamilySettings = ({ family, navigation, route }) => {
           <Dialog.Actions>
             <Button
               onPress={() => setDeleteFamilyToggle(false)}
-              loading={loading}
               disabled={loading}
             >
               CANCEL
@@ -785,7 +858,6 @@ const FamilySettings = ({ family, navigation, route }) => {
               mode="contained"
               onPress={handleDeleteFamily}
               contentStyle={styles.buttonContent}
-              loading={loading}
               disabled={loading}
             >
               DELETE
@@ -811,6 +883,19 @@ const FamilySettings = ({ family, navigation, route }) => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+      {loading && (
+        <ActivityIndicator
+          animating={true}
+          style={{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            margin: "auto",
+            zIndex: 4,
+            backgroundColor: "#0000008c",
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
