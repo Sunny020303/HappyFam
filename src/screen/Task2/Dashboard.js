@@ -27,11 +27,7 @@ export default function Home({ navigation }) {
             style={[styles.card]}
             onPress={() => navigation.navigate("Calendar")}
           >
-            <Card.Title
-              title="Calendar"
-              subtitle="something"
-              titleStyle={styles.cardTitle}
-            />
+            <Card.Title title="Calendar" titleStyle={styles.cardTitle} />
             <Card.Content style={styles.cardContent}>
               <Icon source="calendar-blank" size={60}></Icon>
             </Card.Content>
@@ -40,11 +36,7 @@ export default function Home({ navigation }) {
             style={[styles.card]}
             onPress={() => navigation.navigate("Gallery")}
           >
-            <Card.Title
-              title="Gallery"
-              subtitle="something"
-              titleStyle={styles.cardTitle}
-            />
+            <Card.Title title="Gallery" titleStyle={styles.cardTitle} />
             <Card.Content style={styles.cardContent}>
               <Icon source="image-album" size={60}></Icon>
             </Card.Content>
@@ -53,11 +45,7 @@ export default function Home({ navigation }) {
             style={[styles.card]}
             onPress={() => navigation.navigate("Family")}
           >
-            <Card.Title
-              title="Family"
-              subtitle="something"
-              titleStyle={styles.cardTitle}
-            />
+            <Card.Title title="Family" titleStyle={styles.cardTitle} />
             <Card.Content style={styles.cardContent}>
               <Icon source="account-multiple" size={60}></Icon>
             </Card.Content>
@@ -66,11 +54,7 @@ export default function Home({ navigation }) {
             style={[styles.card]}
             onPress={() => navigation.navigate("Item")}
           >
-            <Card.Title
-              title="Item"
-              subtitle="something"
-              titleStyle={styles.cardTitle}
-            />
+            <Card.Title title="Item" titleStyle={styles.cardTitle} />
             <Card.Content style={styles.cardContent}>
               <Icon source="heart" size={60}></Icon>
             </Card.Content>

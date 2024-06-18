@@ -14,6 +14,7 @@ import {
   Image,
 } from "react-native";
 import {
+  ActivityIndicator,
   Card,
   HelperText,
   Icon,
@@ -209,7 +210,7 @@ export const FamilyMembers = ({
                     : item.first_name
                 }
                 role={item.role}
-                image={item.profiles.avatar ?? null}
+                image={item.profiles.avatar}
                 roleToggle={roleToggle}
                 manageMemberToggle={manageMemberToggle}
               />
@@ -248,7 +249,7 @@ export const FamilyMembers = ({
                 user={user}
                 name={item.family?.name ?? ""}
                 expiration={`expire in ${Math.round((new Date(item.created_at) - new Date()) / (1000 * 60 * 60 * 24)) + 30} days`}
-                image={item.family.image ?? null}
+                image={item.family.image}
                 role={item.role}
               />
             ))}
@@ -638,10 +639,21 @@ const FamilySettings = ({ family, navigation, route }) => {
       <ScrollView contentContainerStyle={styles.container}>
         {image && image !== "none" ? (
           <View>
-            <Image
-              source={{ uri: image }}
-              style={{ marginBottom: 20, width: 250, height: 250 }}
-            />
+            <View>
+              <ActivityIndicator
+                animating={true}
+                style={{
+                  position: "absolute",
+                  width: "100%",
+                  height: "100%",
+                  margin: "auto",
+                }}
+              />
+              <Image
+                source={{ uri: image }}
+                style={{ marginBottom: 20, width: 250, height: 250, zIndex: 1 }}
+              />
+            </View>
             <Button
               icon="plus"
               mode="outlined"
@@ -843,10 +855,21 @@ const InviteCard = (props) => {
             left={() => {
               if (image)
                 return (
-                  <Image
-                    source={{ uri: image }}
-                    style={{ width: 70, height: 70 }}
-                  />
+                  <View>
+                    <ActivityIndicator
+                      animating={true}
+                      style={{
+                        position: "absolute",
+                        width: "100%",
+                        height: "100%",
+                        margin: "auto",
+                      }}
+                    />
+                    <Image
+                      source={{ uri: image }}
+                      style={{ width: 70, height: 70, zIndex: 1 }}
+                    />
+                  </View>
                 );
               else return <Icon source="account" size={70}></Icon>;
             }}
@@ -987,10 +1010,21 @@ const MemberCard = (props) => {
             left={() => {
               if (image)
                 return (
-                  <Image
-                    source={{ uri: image }}
-                    style={{ height: 70, width: 70 }}
-                  />
+                  <View>
+                    <ActivityIndicator
+                      animating={true}
+                      style={{
+                        position: "absolute",
+                        width: "100%",
+                        height: "100%",
+                        margin: "auto",
+                      }}
+                    />
+                    <Image
+                      source={{ uri: image }}
+                      style={{ height: 70, width: 70, zIndex: 1 }}
+                    />
+                  </View>
                 );
               else return <Icon source="account" size={70}></Icon>;
             }}
@@ -1017,7 +1051,7 @@ const MemberCard = (props) => {
                     {isCurrentUser ? "LEAVE" : "REMOVE"}
                   </Button>
                 );
-              if (isCurrentUser && !props.role && focus)
+              else if (isCurrentUser && focus)
                 return (
                   <Button
                     mode="text"

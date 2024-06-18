@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Alert, FlatList, Image, View, StyleSheet } from "react-native";
-import { Button, Icon, TouchableRipple } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Button,
+  Icon,
+  TouchableRipple,
+} from "react-native-paper";
 import ImageViewing from "react-native-image-viewing";
 import * as Sharing from "expo-sharing";
 import { supabase } from "../../lib/supabase";
@@ -61,7 +66,18 @@ export default Gallery = () => {
             style={styles.button}
             onPress={() => onSelect(index)}
           >
-            <Image source={{ uri: item.uri }} style={styles.image} />
+            <>
+              <ActivityIndicator
+                animating={true}
+                style={{
+                  position: "absolute",
+                  width: "100%",
+                  height: "100%",
+                  margin: "auto",
+                }}
+              />
+              <Image source={{ uri: item.uri }} style={styles.image} />
+            </>
           </TouchableRipple>
         )}
       />
@@ -102,7 +118,9 @@ export default Gallery = () => {
                             "Image saved to Download folder",
                           );
                       })
-                      .catch((error) => console.log(error));
+                      .catch((error) => {
+                        Alert.alert(error.message);
+                      });
                   }}
                 />
                 <Button
@@ -120,11 +138,12 @@ export default Gallery = () => {
                       FileSystem.documentDirectory +
                         images[currentImageIndex].name,
                     )
-                      .then(
-                        async ({ uri }) =>
-                          await Sharing.shareAsync(await saveFile(uri)),
-                      )
-                      .catch((error) => console.log(error));
+                      .then(async ({ uri }) => {
+                        await Sharing.shareAsync(await saveFile(uri));
+                      })
+                      .catch((error) => {
+                        Alert.alert(error);
+                      });
                   }}
                 />
               </View>
@@ -157,6 +176,6 @@ const styles = StyleSheet.create({
   },
   listRoot: { flexGrow: 0 },
   listContainer: { flex: 0 },
-  button: { marginRight: 10 },
+  button: { marginRight: 10, zIndex: 1 },
   image: { width: 120, height: 120, borderRadius: 10, marginBottom: 10 },
 });
