@@ -3,6 +3,7 @@ import { useMutation } from "react-query";
 
 const deleteActivity = async (id_activity) => {
     const { error } = await supabase.from('activity').delete().eq('id', id_activity);
+    const { error2 } = await supabase.from('activity_member').delete().eq('id_activity', id_activity);
 
     if (error) {
         throw error;

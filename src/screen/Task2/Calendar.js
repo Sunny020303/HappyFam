@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { Button, Icon, IconButton, TextInput, Card, ActivityIndicator } from "react-native-paper";
+import { Button, Icon, IconButton, TextInput, Card, ActivityIndicator,Avatar } from "react-native-paper";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import {
   FontFamily,
@@ -18,6 +18,10 @@ import {
 } from "../../GlobalStyles";
 import { Agenda, DateData, AgendaEntry, AgendaSchedule } from 'react-native-calendars';
 import userGetActivityList from "../../hooks/ActivityHook/useGetActivityList";
+import useUser from "../../hooks/UserHook/useGetUser";
+import useGetFamilyMemberById from "../../hooks/FamilyHook/useGetFamilyMemberById";
+import useGetFamilyMemberList from "../../hooks/FamilyHook/useGetFamilyMemberList";
+import { useQueryClient } from "react-query";
 
 const timeToString = (time) => {
   const date = new Date(time);
@@ -30,8 +34,9 @@ export default function Calendar() {
   const navigation = useNavigation();
   const [items, setItems] = React.useState({});
   const [date, setDate] = React.useState(new Date());
-  const activiyList = userGetActivityList("cadb52ea-9d5a-47ba-af1a-3e1f6599aa5c", date);
-
+  const queryClient=useQueryClient()
+  const activiyList = userGetActivityList(queryClient.getQueryData('Family').id_family, date);
+  const family_member = useGetFamilyMemberList(queryClient.getQueryData('Family').id_family);
   React.useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -39,14 +44,15 @@ export default function Calendar() {
       ),
     });
 
-    console.log("hi there!");
+    //console.log(GetFamily.data[0].id_family);
     activiyList.refetch();
     setItems({});
+    //console.log(queryClient.getQueryData('Family').id_family);
   }, [isFocus]);
 
   if (activiyList.isFetching) {
     return (
-      <View style={{ alignItems: "center", justifyContent: "center",height: "100%", width: "100%" }}>
+      <View style={{ alignItems: "center", justifyContent: "center", height: "100%", width: "100%" }}>
         <ActivityIndicator animating={true} color='blue' size="large"></ActivityIndicator>
       </View>
     )
@@ -55,7 +61,7 @@ export default function Calendar() {
   const loadItems = (day) => {
     const items = items || {};
     setTimeout(() => {
-      for (let i =-70; i < 70; i++) {
+      for (let i = -70; i < 70; i++) {
         const time = day.timestamp + i * 24 * 60 * 60 * 1000;
         const strTime = timeToString(time);
         if (!items[strTime]) {
@@ -102,10 +108,15 @@ export default function Calendar() {
       >
         {
           reservation.image !== 'No image' && (
-            <Card.Cover style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}source={{ uri: `${reservation.image}?${new Date().getTime()}` }} ></Card.Cover>
+            <Card.Cover style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }} source={{ uri: `${reservation.image}?${new Date().getTime()}` }} ></Card.Cover>
           )
         }
-        <Card.Title title={reservation.name} subtitle={reservation.day}></Card.Title>
+        <Card.Title 
+        title={reservation.name} 
+        subtitle={reservation.day} 
+        titleStyle={{fontSize:30, fontWeight:"bold",paddingTop: 15}}
+        subtitleStyle={{fontSize:20, fontWeight:"400",paddingTop: 5}}
+        ></Card.Title>
 
       </Card>
     );

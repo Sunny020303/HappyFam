@@ -6,8 +6,6 @@ import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 const createActivity = async (activity, id_activity) => {
 
-
-
     if (!id_activity) {
         if (activity.image == null) {
             const { data, error } = await supabase
@@ -28,6 +26,19 @@ const createActivity = async (activity, id_activity) => {
             if (error) {
                 throw error;
             }
+
+            const listMember = []
+            activity.id_member.map((i) => {
+                listMember.push({ id_activity: data ? data[0].id : undefined, id_member: i })
+            });
+
+            const { data1, error1 } = await supabase
+                .from('activity_member')
+                .insert(
+                    listMember
+                )
+                .select();
+
             return data;
 
         } else {
@@ -57,6 +68,19 @@ const createActivity = async (activity, id_activity) => {
                 .select()
 
             const id = data ? data[0].id : undefined;
+
+            const listMember = []
+            activity.id_member.map((i) => {
+                listMember.push({ id_activity: id, id_member: i })
+            });
+
+            const { data1, error1 } = await supabase
+                .from('activity_member')
+                .insert(
+                    listMember
+                )
+                .select();
+
             //console.log(id);
             //
             //console.log("This is the picture")
@@ -101,7 +125,25 @@ const createActivity = async (activity, id_activity) => {
                     location: activity.location,
                     note: activity.note,
                 })
-                .select()
+                .select();
+
+            const { error2 } = await supabase.from('activity_member').delete().eq('id_activity', id_activity);
+
+            if (error2) {
+                throw error2;
+            }
+            const listMember = []
+            activity.id_member.map((i) => {
+                listMember.push({ id_activity: id_activity, id_member: i })
+            });
+
+            const { data1, error1 } = await supabase
+                .from('activity_member')
+                .insert(
+                    listMember
+                )
+                .select();
+
             if (error) {
                 throw error;
             }
@@ -109,12 +151,12 @@ const createActivity = async (activity, id_activity) => {
         } else {
             const base64 = await FileSystem.readAsStringAsync(activity.image, { encoding: 'base64' });
 
-            const {data: img , error: imageError} = await supabase.storage.from('activityPics').upload(`public/${id_activity}.png`, decode(base64), {
+            const { data: img, error: imageError } = await supabase.storage.from('activityPics').upload(`public/${id_activity}.png`, decode(base64), {
                 upsert: true,
                 contentType: 'image/png',
             });
 
-            if(imageError) {
+            if (imageError) {
                 throw imageError;
             }
             const { data, error } = await supabase
@@ -130,9 +172,25 @@ const createActivity = async (activity, id_activity) => {
                     id_member: activity.id_member,
                     location: activity.location,
                     note: activity.note,
-                    image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/' +id_activity +'.png'
+                    image: 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/' + id_activity + '.png'
                 })
-                .select()
+                .select();
+
+            const { error2 } = await supabase.from('activity_member').delete().eq('id_activity', id_activity);
+            if (error2) {
+                throw error2;
+            }
+            const listMember = []
+            activity.id_member.map((i) => {
+                listMember.push({ id_activity: id_activity, id_member: i })
+            });
+
+            const { data1, error1 } = await supabase
+                .from('activity_member')
+                .insert(
+                    listMember
+                )
+                .select();
             if (error) {
                 throw error;
             }

@@ -10,9 +10,8 @@ import {
   Icon,
   Switch,
   RadioButton,
-  List,
   IconButton,
-  Title,
+  Checkbox,
   ActivityIndicator,
 } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
@@ -26,15 +25,23 @@ import { AppState } from "react-native";
 import { Dimensions } from 'react-native';
 import useUser from "../../hooks/UserHook/useGetUser";
 import userGetActivityById from "../../hooks/ActivityHook/useGetActivityById";
+import { useQueryClient } from "react-query";
+import useGetFamilyMemberList from "../../hooks/FamilyHook/useGetFamilyMemberList";
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function Activity({ route, navigation }) {
+
+
   const isFocus = useIsFocused();
-  const user = useUser();
+  const queryClient = useQueryClient()
+
   const [title, setTitle] = useState("");
-  const [withWho, setWithWho] = useState("Everyone");
-  const [visible, setVisible] = useState("Everyone");
+  //with who
+  const [withWho, setWithWho] = useState([]);
+  const [withWhoToggle, setWithWhoToggle] = useState(false);
+
+
   //repeat
   const [repeat, setRepeat] = useState({ value: 0, unit: "day" });
   const [repeatToggle, setRepeatToggle] = useState(false);
@@ -160,10 +167,10 @@ export default function Activity({ route, navigation }) {
       end: end,
       repeat: repeat,
       remind: remind,
-      id_family: 'cadb52ea-9d5a-47ba-af1a-3e1f6599aa5c',
-      id_member: ['19f45d36-9313-4eb1-a77b-f88608603d27'],
+      id_family: queryClient.getQueryData('Family').id_family,
+      id_member: withWho,
       location: location,
-      image: (image==="No image"|| image.includes("https")) ? null : image,
+      image: (image.includes("No image") || image.includes("https")) ? null : image,
       note: note,
     },
     route.params?.activity.id,
@@ -189,8 +196,7 @@ export default function Activity({ route, navigation }) {
     createActivity.reset();
     if (route.params?.activity) {
       setTitle(route.params?.activity.title)
-      setWithWho("Everyone");
-      setVisible("Everyone");
+      setWithWho(route.params?.activity.id_member);
       setRepeat(route.params?.activity.repeat);
       setRemind(route.params?.activity.remind);
       setLocation(route.params?.activity.location);
@@ -202,8 +208,7 @@ export default function Activity({ route, navigation }) {
       setImage(`${route.params?.activity.image}?${new Date().getTime()}`)
     } else {
       setTitle("");
-      setWithWho("Everyone");
-      setVisible("Everyone");
+      setWithWho([]);
       setRepeat({ value: 0, unit: "day" });
       setRemind({ value: 0, unit: "minute" });
       setLocation("");
@@ -216,9 +221,10 @@ export default function Activity({ route, navigation }) {
     }
 
     console.log(route.params?.activity)
-    if(!isFocus){
+    if (!isFocus) {
       setImage("No image");
     }
+    //queryClient.getQueryData('FamilyMemberList').map((i)=>console.log(i.family_role));
   }, [isFocus]);
 
   React.useEffect(() => {
@@ -250,6 +256,48 @@ export default function Activity({ route, navigation }) {
       </View>
     )
   }*/
+  var list = [...withWho];
+  const MemberCard = (props) => {
+    const [checked, setChecked] = useState(list.includes(props.id));
+
+
+    return (
+      <View style={[styles.memberCardView]}>
+        <View style={{ flexDirection: "row" }}>
+          {
+            props.avatar ? (
+              <Image
+                resizeMode="cover"
+                source={{ uri: props.avatar }}
+                style={{ width: 80, height: 80 }}
+                backgroundColor="blue"
+                margin={9}
+                borderRadius={10}
+              >
+              </Image>
+            ) : (
+              <Icon source="account" size={95}></Icon>
+            )
+          }
+          <Text style={[styles.textDescription, { marginTop: 25 }]}>{props.name}</Text>
+        </View>
+
+        <Checkbox
+          status={checked ? 'checked' : 'unchecked'}
+          onPress={() => {
+            setChecked(!checked);
+            if (!checked) list.push(props.id);
+            else list = list.filter((i) => i !== props.id);
+            console.log(list);
+          }}
+
+          margin={30}
+        ></Checkbox>
+      </View>
+    )
+  }
+
+
   return (
     <ScrollView
       style={styles.container}
@@ -342,7 +390,7 @@ export default function Activity({ route, navigation }) {
 
 
       <View style={styles.viewComponent}>
-        <TouchableRipple onPress={() => { }}>
+        <TouchableRipple onPress={() => setWithWhoToggle(true)}>
           <View style={styles.viewTab}>
             <Icon
               source="account-multiple-outline"
@@ -353,29 +401,12 @@ export default function Activity({ route, navigation }) {
               With who?
             </Text>
             <Text style={styles.textState}>
-              {" " + withWho}
+              {withWho.length + " member"}
             </Text>
           </View>
         </TouchableRipple>
       </View>
 
-      <View style={styles.viewComponent}>
-        <TouchableRipple onPress={() => { }}>
-          <View style={styles.viewTab}>
-            <Icon
-              source="eye-outline"
-              style={styles.iconStyle}
-              size={30}
-            ></Icon>
-            <Text style={styles.textDescription}>
-              Visible to:
-            </Text>
-            <Text style={styles.textState}>
-              {" " + visible}
-            </Text>
-          </View>
-        </TouchableRipple>
-      </View>
 
       <View style={styles.viewComponent}>
         <TouchableRipple onPress={() => { setRepeatToggle(true) }}>
@@ -433,11 +464,11 @@ export default function Activity({ route, navigation }) {
 
       <View style={[styles.viewComponent]}>
         <TouchableRipple onPress={showDialog}>
-          {image!=="No image" ? (
+          {!image.includes("No image") ? (
             <View style={{ justifyContent: "center", alignItems: "center" }}>
               <Image
                 resizeMode="cover"
-                source={{uri: image}}
+                source={{ uri: image }}
                 style={{ width: "100%", height: height }}
               >
               </Image>
@@ -561,6 +592,35 @@ export default function Activity({ route, navigation }) {
         </Dialog>
       </Portal>
 
+      <Portal>
+        <Dialog visible={withWhoToggle} onDismiss={() => setWithWhoToggle(false)}>
+          <Dialog.Icon icon='account-group-outline' size={40}></Dialog.Icon>
+          <Dialog.Title alignSelf="center">Choose member</Dialog.Title>
+          <Dialog.Content>
+            <ScrollView
+              style={styles.memberCarContainer}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.formContent}
+            >
+              {queryClient.getQueryData('FamilyMemberList').map((i) => (
+                <MemberCard name={i.family_role} avatar={i.profiles.avatar} id={i.profiles.id}>
+
+                </MemberCard>
+              ))}
+
+            </ScrollView>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => {
+              setWithWho(list);
+              setWithWhoToggle(false);
+            }}>Ok</Button>
+            <Button onPress={() => setWithWhoToggle(false)}>Cancel</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+
       <TimePickerModal
         visible={visibleTimePicker}
         onDismiss={onDismissTime}
@@ -585,6 +645,8 @@ export default function Activity({ route, navigation }) {
 
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -635,5 +697,19 @@ const styles = StyleSheet.create({
   buttonModal: {
     marginTop: 10,
     padding: 5,
+  },
+  memberCarContainer: {
+    height: 400,
+  },
+  memberCardView: {
+    height: 100,
+    width: "100%",
+    backgroundColor: '#F5E388',
+    borderColor: "black",
+    borderWidth: 2,
+    marginBottom: 10,
+    borderRadius: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
   }
 });

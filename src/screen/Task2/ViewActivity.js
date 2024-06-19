@@ -2,16 +2,18 @@ import React, { useState } from "react";
 import { Text, View, StyleSheet, ScrollView, Image, ViewComponent } from "react-native";
 import { FontSize, Color, StyleVariable } from "../../GlobalStyles";
 import { Dimensions } from 'react-native';
-import { IconButton, ActivityIndicator, Icon, Portal, Dialog, Button } from "react-native-paper";
+import { IconButton, ActivityIndicator, Icon, Portal, Dialog, Button, Avatar } from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import userGetActivityById from "../../hooks/ActivityHook/useGetActivityById";
 import useDeleteActivity from "../../hooks/ActivityHook/useDeleteActivity";
+import userGetMemberList from "../../hooks/ActivityHook/useGetMemberList";
 const screenWidth = Dimensions.get('window').width;
 
 export default ViewActivity = ({ route, navigation }) => {
     const isFocus = useIsFocused();
     const activity = userGetActivityById(route.params?.activityId);
     const deleteActivity = useDeleteActivity(route.params?.activityId)
+    const memberList = userGetMemberList(route.params?.activityId)
     const [title, setTitle] = useState("No title");
     const [image, setImage] = useState("No image");
     const [location, setLocation] = useState("Somewhere");
@@ -62,7 +64,13 @@ export default ViewActivity = ({ route, navigation }) => {
             console.log(activity.data[0].image);
 
         }
-    }, [activity.data])
+    }, [activity.data]);
+
+    React.useEffect(() => {
+        if (memberList.data) {
+            console.log(memberList.data)
+        }
+    }, [memberList.data]);
 
     navigation.setOptions({
         headerRight: () => (
@@ -76,7 +84,7 @@ export default ViewActivity = ({ route, navigation }) => {
     });
 
 
-    if (activity.isFetching) {
+    if (activity.isFetching || memberList.isFetching) {
         return (
             <View style={{ alignItems: "center", justifyContent: "center", height: "100%", width: "100%" }}>
                 <ActivityIndicator animating={true} color='blue' size="large"></ActivityIndicator>
@@ -129,10 +137,25 @@ export default ViewActivity = ({ route, navigation }) => {
 
                 </View>
 
-                <View style={styles.viewComponent}>
-                    <Text style={styles.textFormat}>
-                        everyone
-                    </Text>
+                <View style={[styles.viewComponent, { flexDirection: "row", height: 70 }]}>
+                    {memberList.data ? memberList.data.map((i) => (
+                       
+                        i.profiles.avatar ?
+                            <Image
+                                resizeMode="cover"
+                                source={{ uri: i.profiles.avatar }}
+                                style={{ width: 60, height: 60 }}
+                                margin={5}
+                                borderRadius={20}
+                            >
+                            </Image> :
+                            <Avatar.Icon
+                                color="#F5E388"
+                                style={{ borderRadius: 20, margin: 5 }}
+                                icon="account"
+                            />)) : <Text style={styles.textFormat}>No member</Text>
+                    }
+
 
                 </View>
 
@@ -190,7 +213,7 @@ const styles = StyleSheet.create({
         backgroundColor: Color.materialThemeSysLightOutlineVariant,
     },
     viewComponent: {
-        marginTop: 1,
+        marginTop: 3,
         backgroundColor: Color.materialThemeSysLightInverseOnSurface,
     },
     textFormat: {
