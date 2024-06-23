@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Text,
   View,
@@ -30,9 +30,10 @@ import useDeleteComment from "../../hooks/CommentHook/useDeleteComment";
 import useGetCommentList from "../../hooks/CommentHook/useGetCommentList";
 const screenWidth = Dimensions.get("window").width;
 
-export default ViewActivity = ({ route, navigation }) => {
+export default ViewActivity = ({ route, navigation, family }) => {
   const isFocus = useIsFocused();
   const user = useUser();
+  const scrollViewRef = useRef();
   const activity = userGetActivityById(route.params?.activityId);
   const deleteActivity = useDeleteActivity(route.params?.activityId);
   const memberList = userGetMemberList(route.params?.activityId);
@@ -67,6 +68,8 @@ export default ViewActivity = ({ route, navigation }) => {
   const [height, setHeight] = useState(0);
   const [toggleDelete, setToggleDelete] = useState(false);
   const [commentList, setCommentList] = useState([]);
+  const [scrollIndex, setScrollIndex] = useState(0);
+
   if (deleteActivity.isSuccess) {
     navigation.navigate("Calendar");
   }
@@ -118,7 +121,7 @@ export default ViewActivity = ({ route, navigation }) => {
     if (activity.data) {
       setTitle(activity.data[0].title);
       setImage(
-        activity.data[0].image
+        activity.data[0].image && activity.data[0].image !== "No image"
           ? `${activity.data[0].image}?${Date.now()}`
           : "No image",
       );
@@ -155,7 +158,7 @@ export default ViewActivity = ({ route, navigation }) => {
         return nested;
       };
 
-      // name: user id, email: displayed name
+      // email: displayed name
       const updatedCommentList = GetCommentList.data.map((comment) => {
         const email = comment.id_member
           ? comment.profiles.family_member?.length > 0 &&
@@ -168,10 +171,11 @@ export default ViewActivity = ({ route, navigation }) => {
             ? `${comment.profiles.avatar}?${Date.now()}`
             : "https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/avatar/public/account.png"
           : "https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/avatar/public/account.png";
-        return { ...comment, email, image };
+        const lastModified = comment.updated_at ?? comment.created_at;
+        return { ...comment, email, image, lastModified };
       });
 
-      setCommentList(buildNestedComments(updatedCommentList));
+      setCommentList(updatedCommentList);
     } else setCommentList([]);
   }, [GetCommentList.data]);
 
@@ -274,8 +278,10 @@ export default ViewActivity = ({ route, navigation }) => {
   return (
     <ScrollView
       style={styles.container}
-      keyboardShouldPersistTaps="handled"
+      keyboardShouldPersistTaps="always"
       contentContainerStyle={styles.formContent}
+      onScroll={(event) => setScrollIndex(event.nativeEvent.contentOffset.y)}
+      ref={scrollViewRef}
     >
       <View style={styles.viewContainer}>
         <View style={styles.viewComponent}>
@@ -369,19 +375,32 @@ export default ViewActivity = ({ route, navigation }) => {
         <View style={styles.viewComponent}>
           <Comments
             data={commentList}
-            viewingUserName={user.data?.id}
-            saveAction={handleSubmitComment}
-            editAction={handleEditComment}
-            deleteAction={handleDeleteComment}
+            viewingUserName={
+              family.family_role ?? user.data?.first_name + user.data?.last_name
+            }
+            childPropName={"children"}
+            isChild={(item) => (item.id_parent ? true : false)}
             keyExtractor={(item) => item.id}
             parentIdExtractor={(item) => item.id_parent}
             usernameExtractor={(item) => item.email}
             createdTimeExtractor={(item) => item.created_at}
-            editTimeExtractor={(item) => item.updated_at}
+            editTimeExtractor={(item) => item.lastModified}
             bodyExtractor={(item) => item.body}
             imageExtractor={(item) => item.image}
             likesExtractor={() => []}
-            childrenCountExtractor={(item) => item.children.length}
+            childrenCountExtractor={() => 0}
+            // replyAction={(offset) => {
+            //   scrollViewRef.current.scrollTo({
+            //     x: null,
+            //     y: scrollIndex + offset - 300,
+            //     animated: true,
+            //   });
+            // }}
+            saveAction={(text, parentCommentId) =>
+              handleSubmitComment(text, parentCommentId)
+            }
+            editAction={(text, comment) => handleEditComment(text, comment)}
+            deleteAction={(comment) => handleDeleteComment(comment)}
           />
         </View>
       </View>

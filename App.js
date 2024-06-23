@@ -318,11 +318,12 @@ function AppContent() {
 
             <DrawerNav.Screen
               name="View Activity"
-              component={ViewActivity}
               options={({ navigation, route }) => ({
                 drawerItemStyle: { display: "none" },
               })}
-            />
+            >
+              {(props) => <ViewActivity {...props} family={GetFamily.data} />}
+            </DrawerNav.Screen>
           </DrawerNav.Navigator>
         ) : (
           <DrawerNav.Navigator
