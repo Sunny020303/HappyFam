@@ -171,8 +171,7 @@ export default ViewActivity = ({ route, navigation, family }) => {
             ? `${comment.profiles.avatar}?${Date.now()}`
             : "https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/avatar/public/account.png"
           : "https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/avatar/public/account.png";
-        const lastModified = comment.updated_at ?? comment.created_at;
-        return { ...comment, email, image, lastModified };
+        return { ...comment, email, image };
       });
 
       setCommentList(updatedCommentList);
@@ -384,7 +383,7 @@ export default ViewActivity = ({ route, navigation, family }) => {
             parentIdExtractor={(item) => item.id_parent}
             usernameExtractor={(item) => item.email}
             createdTimeExtractor={(item) => item.created_at}
-            editTimeExtractor={(item) => item.lastModified}
+            editTimeExtractor={(item) => item.updated_at ?? item.created_at}
             bodyExtractor={(item) => item.body}
             imageExtractor={(item) => item.image}
             likesExtractor={() => []}

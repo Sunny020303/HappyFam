@@ -5,7 +5,7 @@ const getCommentList = async (id) => {
   let { data, error } = await supabase
     .from("comment")
     .select(
-      "id, created_at, id_member, id_parent, body, profiles(id, first_name, last_name, avatar, family_member(id_member, family_role))",
+      "id, created_at, updated_at, id_member, id_parent, body, profiles(id, first_name, last_name, avatar, family_member(id_member, family_role))",
     )
     .eq("id_activity", id);
 
