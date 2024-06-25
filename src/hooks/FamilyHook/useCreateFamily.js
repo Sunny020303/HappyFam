@@ -22,7 +22,7 @@ const createFamily = async (member_id, name) => {
       id_family: data[0].id,
       id_member: member_id,
       role: true,
-      family_role: "Family Founder",
+      family_role: "",
     })
     .select();
   if (error2) {

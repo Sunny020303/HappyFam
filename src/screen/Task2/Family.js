@@ -41,6 +41,7 @@ import useUpdateMemberRole from "../../hooks/FamilyHook/useUpdateMemberRole";
 import useUpdateMemberFamilyRole from "../../hooks/FamilyHook/useUpdateMemberFamilyRole";
 import useDeleteMember from "../../hooks/FamilyHook/useDeleteMember";
 import * as ImagePicker from "expo-image-picker";
+import ReactFamilyTree from "react-family-tree";
 import { Color, FontSize, Padding, StyleVariable } from "../../GlobalStyles";
 
 const Stack = createNativeStackNavigator();
@@ -49,6 +50,7 @@ export default Family = ({ family, role, navigation, route }) => {
   const theme = useTheme();
   const [roleToggle, setRoleToggle] = useState(false);
   const [manageMember, setManageMember] = useState(false);
+  const familyList = useGetFamilyMemberList(family.id_family);
 
   family && role
     ? navigation.setOptions({
@@ -61,6 +63,7 @@ export default Family = ({ family, role, navigation, route }) => {
               }}
               mode={roleToggle ? "contained" : "elevated"}
               icon="crown-outline"
+              style={{ padding: 0, margin: 0 }}
             />
             <IconButton
               onPress={() => {
@@ -69,10 +72,17 @@ export default Family = ({ family, role, navigation, route }) => {
               }}
               mode={manageMember ? "contained" : "elevated"}
               icon="minus-circle-outline"
+              style={{ padding: 0, margin: 0 }}
+            />
+            <IconButton
+              onPress={() => navigation.navigate("Family Tree")}
+              icon="family-tree"
+              style={{ padding: 0, margin: 0 }}
             />
             <IconButton
               onPress={() => navigation.navigate("Family Settings")}
               icon="cog-outline"
+              style={{ padding: 0, margin: 0 }}
             />
           </View>
         ),
@@ -93,7 +103,19 @@ export default Family = ({ family, role, navigation, route }) => {
             family={family}
             roleToggle={roleToggle}
             manageMemberToggle={manageMember}
+            familyList={familyList}
           />
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="Family Tree"
+        options={({ navigation, route }) => ({
+          headerStyle: { backgroundColor: theme.colors.primaryContainer },
+          unmountOnBlur: true,
+        })}
+      >
+        {(props) => (
+          <FamilyTree {...props} family={family} familyList={familyList} />
         )}
       </Stack.Screen>
       <Stack.Screen
@@ -111,6 +133,7 @@ export default Family = ({ family, role, navigation, route }) => {
 
 export const FamilyMembers = ({
   family,
+  familyList,
   roleToggle,
   manageMemberToggle,
   navigation,
@@ -146,7 +169,6 @@ export const FamilyMembers = ({
   const [checkInitialState, setInitialState] = useState({ email: true });
 
   const invitationList = useGetInvitationList(user.data?.email);
-  const familyList = useGetFamilyMemberList(family.id_family);
 
   const createFamily = useCreateFamily(user.data?.id, newFamilyName);
   if (createFamily.isSuccess) queryClient.invalidateQueries("Family");
@@ -1207,6 +1229,152 @@ const MemberCard = (props) => {
           </Dialog>
         )}
       </Portal>
+    </>
+  );
+};
+
+const FamilyTree = ({ family, familyList, navigation, route }) => {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
+
+  const user = useUser();
+
+  const [nodes, setNodes] = useState(familyList.data);
+  const firstNodeId = nodes[0].id_member;
+  const [rootId, setRootId] = useState(firstNodeId);
+  const [hoverId, setHoverId] = useState("");
+  const [selectId, setSelectId] = useState("");
+
+  const selected = React.useMemo(
+    () => nodes.find((item) => item.id === selectId),
+    [nodes, selectId],
+  );
+  const resetRootHandler = React.useCallback(
+    () => setRootId(firstNodeId),
+    [firstNodeId],
+  );
+
+  // When the keyboard is hidden, dismiss it instead
+  React.useEffect(() => {
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      Keyboard.dismiss();
+    });
+
+    return () => hideSubscription.remove();
+  }, []);
+
+  // Hide Drawer header when on Family Settings
+  React.useLayoutEffect(() => {
+    if (!navigation || !route) return;
+
+    // Get parent by id
+    const drawerNavigator = navigation.getParent("Drawer");
+
+    if (drawerNavigator) {
+      if (route.name === "Family Settings") {
+        drawerNavigator.setOptions({
+          headerShown: false,
+        });
+      }
+    }
+
+    // Turn header back on when unmount
+    return drawerNavigator
+      ? () =>
+          drawerNavigator.setOptions({
+            headerShown: true,
+          })
+      : undefined;
+  }, [navigation, route]);
+
+  return (
+    <SafeAreaView>
+      <Text>Family Tree</Text>
+      <ReactFamilyTree
+        nodes={nodes}
+        rootId={rootId}
+        renderNode={(node) => (
+          <FamilyNode
+            key={node.id_member}
+            node={node}
+            isRoot={node.id_member === rootId}
+            isHover={node.id === hoverId}
+            onClick={setSelectId}
+            onSubClick={setRootId}
+          />
+        )}
+      />
+      {rootId !== firstNodeId && (
+        <Button onClick={resetRootHandler}>Reset</Button>
+      )}
+      {selected && (
+        <NodeDetails
+          node={selected}
+          className={css.details}
+          onSelect={setSelectId}
+          onHover={setHoverId}
+          onClear={() => setHoverId(undefined)}
+        />
+      )}
+    </SafeAreaView>
+  );
+};
+
+const FamilyNode = ({ node, isRoot, isHover, onClick, onSubClick }) => {
+  const clickHandler = React.useCallback(
+    () => onClick(node.id_member),
+    [node.id_member, onClick],
+  );
+  const clickSubHandler = React.useCallback(
+    () => onSubClick(node.id_member),
+    [node.id_member, onSubClick],
+  );
+
+  return (
+    <>
+      <TouchableOpacity onClick={clickHandler}>
+        <Text>{node.id_member}</Text>
+      </TouchableOpacity>
+      {node.hasSubTree && <div onClick={clickSubHandler} />}
+    </>
+  );
+};
+
+const NodeDetails = ({ node, onSelect, onHover, onClear }) => {
+  const closeHandler = useCallback(() => props.onSelect(undefined), [props]);
+
+  return (
+    <>
+      <Text>{node.id_member}</Text>
+      <Button onClick={closeHandler}>&#10005;</Button>
+      <Relations {...props} title="Parents" items={node.parents} />
+      <Relations {...props} title="Children" items={node.children} />
+      <Relations {...props} title="Siblings" items={node.siblings} />
+      <Relations {...props} title="Spouses" items={node.spouses} />
+    </>
+  );
+};
+
+const Relations = ({ title, items, onSelect, onHover, onClear }) => {
+  const selectHandler = useCallback((id) => () => onSelect(id), [onSelect]);
+  const hoverHandler = useCallback((id) => () => onHover(id), [onHover]);
+  const clearHandler = useCallback(() => onClear(), [onClear]);
+
+  if (!items.length) return null;
+
+  return (
+    <>
+      <Text>{title}</Text>
+      {items.map((item, idx) => (
+        <TouchableOpacity
+          key={idx}
+          onClick={selectHandler(item.id)}
+          onMouseEnter={hoverHandler(item.id)}
+          onMouseLeave={clearHandler}
+        >
+          {item.id} ({item.type})
+        </TouchableOpacity>
+      ))}
     </>
   );
 };
