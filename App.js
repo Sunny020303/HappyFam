@@ -22,6 +22,7 @@ import {
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 
 import { supabase } from "./src/lib/supabase";
 import { Session } from "@supabase/supabase-js";
@@ -135,7 +136,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <PaperProvider theme={theme}>
-        <AppContent />
+        <ActionSheetProvider>
+          <AppContent />
+        </ActionSheetProvider>
       </PaperProvider>
     </QueryClientProvider>
   );

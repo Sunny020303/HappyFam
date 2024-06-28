@@ -29,8 +29,8 @@ import {
   useTheme,
 } from "react-native-paper";
 import Svg, { Line } from "react-native-svg";
-import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
-import ActionSheet from "react-native-actions-sheet";
+import { useActionSheet } from "@expo/react-native-action-sheet";
+
 import useUser from "../../hooks/UserHook/useGetUser";
 import useCreateFamily from "../../hooks/FamilyHook/useCreateFamily";
 import useCreateInvitation from "../../hooks/FamilyHook/useCreateInvitation";
@@ -111,14 +111,6 @@ export const FamilyMembers = ({
   const user = useUser();
   const queryClient = useQueryClient();
   const [addFamilyToggle, setAddFamilyToggle] = useState(false);
-  const [addMemberToggle, setAddMemberToggle] = useState(false);
-  const [addMemberConfirm, setAddMemberConfirm] = useState(false);
-  const hideAddMemberConfirm = () => {
-    setAddMemberConfirm(false);
-    setEmail("");
-    setRole("");
-    setInitialState({ ...checkInitialState, email: true });
-  };
 
   const [dialogToggle, setDialogToggle] = useState(false);
   var dialogTitle = "";
@@ -128,15 +120,9 @@ export const FamilyMembers = ({
   const [newFamilyName, setNewFamilyName] = useState("");
   //const [userId, setUserId] = useState();
 
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
-  const [emailError, setEmailError] = useState("");
-
   const [familyTree, setFamilyTree] = useState([]);
   const [familyTreeWidth, setFamilyTreeWidth] = useState(0);
   const [familyTreeHeight, setFamilyTreeHeight] = useState(0);
-
-  const [checkInitialState, setInitialState] = useState({ email: true });
 
   const invitationList = useGetInvitationList(user.data?.email);
 
@@ -144,54 +130,13 @@ export const FamilyMembers = ({
   if (createFamily.isSuccess) queryClient.invalidateQueries("Family");
   if (createFamily.isError) console.log(createFamily.error);
 
-  const createInvitation = useCreateInvitation(family.id_family, email, role);
-  if (createInvitation.isError) console.log(createInvitation.error);
-
-  const handleAddMember = () => {
-    setInitialState({ ...checkInitialState, email: false });
-    if (validateEmail()) {
-      for (const member of familyList.data)
-        if (email == member.profiles?.email) {
-          setEmailError("User already in the family");
-          return;
-        }
-      createInvitation.mutate();
-    }
-  };
-
-  const validateEmail = () => {
-    if (!checkInitialState.email) {
-      if (!email) {
-        setEmailError("Enter an email");
-        return false;
-      }
-      if (
-        !/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
-          email,
-        )
-      ) {
-        setEmailError("Email a valid email");
-        return false;
-      }
-      setEmailError("");
-      return true;
-    }
-  };
-
   React.useEffect(() => {
     invitationList.refetch();
   }, [user]);
 
   React.useEffect(() => {
-    if (createInvitation.isSuccess) {
-      setAddMemberToggle(false);
-      setAddMemberConfirm(true);
-    }
-  }, [createInvitation.isSuccess]);
-
-  React.useEffect(() => {
     if (familyList && familyList.data && familyList.data.length > 0) {
-      const modifyFamilyData = (familyData) => {
+      const modifyFamilyData = (familyData, isSpouse) => {
         const modifiedData = { ...familyData };
         if (familyData.profiles) {
           modifiedData.name =
@@ -199,25 +144,43 @@ export const FamilyMembers = ({
             `${familyData.profiles.first_name} ${familyData.profiles.last_name}`;
           modifiedData.avatar = familyData.profiles.avatar;
         }
+        if (isSpouse) modifiedData.spouse = null;
+        else if (familyData.spouse) {
+          const spouseItem = familyList.data.find(
+            (item) => item.id_member === familyData.spouse,
+          );
+          modifiedData.spouse = modifyFamilyData(spouseItem, true);
+        }
         if (familyData.children && familyData.children.length > 0) {
           modifiedData.children = familyData.children.map((childId) =>
             modifyFamilyData(
               familyList.data.find((child) => child.id_member === childId),
+              false,
             ),
           );
         }
         return modifiedData;
       };
 
+      const uniqueSpouses = new Set();
+
+      const filteredData = familyList.data.filter((item) => {
+        if (item.spouse && uniqueSpouses.has(item.spouse)) {
+          return false;
+        }
+        uniqueSpouses.add(item.id_member);
+        return true;
+      });
+
       setFamilyTree(
-        familyList.data
+        filteredData
           .filter(
             (item) =>
-              !familyList.data.some((member) =>
+              !filteredData.some((member) =>
                 member.children?.includes(item.id_member),
               ),
           )
-          .map((item) => modifyFamilyData(item)),
+          .map((item) => modifyFamilyData(item, false)),
       );
     }
   }, [familyList]);
@@ -228,198 +191,121 @@ export const FamilyMembers = ({
 
   return (
     <SafeAreaView>
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        {familyTree && familyTree.length > 0 ? (
-          <ReactNativeZoomableView
-            initialZoom={1}
-            minZoom={0.15}
-            maxZoom={10}
-            contentWidth={familyTreeWidth}
-            contentHeight={familyTreeHeight}
-            bindToBorders={false}
-            pinchToZoomInSensitivity={2}
-            pinchToZoomOutSensitivity={2}
-            visualTouchFeedbackEnabled={false}
-            doubleTapZoomToCenter={false}
-          >
-            <FamilyTree
-              data={familyTree}
-              setFamilyTreeWidth={setFamilyTreeWidth}
-              setFamilyTreeHeight={setFamilyTreeHeight}
-              isAdmin={isAdmin}
+      {familyTree && familyTree.length > 0 ? (
+        <View style={styles.container}>
+          <FamilyTree
+            data={familyTree}
+            isAdmin={isAdmin}
+            familyList={familyList}
+          />
+        </View>
+      ) : invitationList &&
+        invitationList.data &&
+        invitationList.data.length > 0 ? (
+        <ScrollView contentContainerStyle={styles.scrollView}>
+          {invitationList.data.map((item) => (
+            <InviteCard
+              id={item.family?.id}
+              user={user}
+              name={item.family?.name ?? ""}
+              expiration={`expire in ${Math.round((new Date(item.created_at) - new Date()) / (1000 * 60 * 60 * 24)) + 30} days`}
+              image={item.family.image}
+              role={item.role}
             />
-          </ReactNativeZoomableView>
-        ) : invitationList &&
-          invitationList.data &&
-          invitationList.data.length > 0 ? (
-          <>
-            {invitationList.data.map((item) => (
-              <InviteCard
-                id={item.family?.id}
-                user={user}
-                name={item.family?.name ?? ""}
-                expiration={`expire in ${Math.round((new Date(item.created_at) - new Date()) / (1000 * 60 * 60 * 24)) + 30} days`}
-                image={item.family.image}
-                role={item.role}
-              />
-            ))}
-            <Card
-              style={styles.cardMember}
-              onPress={() => console.log(invitationList.data)}
+          ))}
+          <Card
+            style={styles.cardMember}
+            onPress={() => console.log(invitationList.data)}
+          >
+            <Card.Title
+              title="Create a Family"
+              left={() => {
+                return <Icon source="plus-circle-outline" size={70}></Icon>;
+              }}
+              leftStyle={{
+                height: "70px",
+                width: "70px",
+                marginTop: 15,
+                borderRadius: 10,
+              }}
+              titleStyle={{
+                height: 50,
+                paddingTop: 27,
+                fontSize: 30,
+                fontWeight: "bold",
+              }}
+            />
+          </Card>
+        </ScrollView>
+      ) : (
+        <>
+          <Card
+            style={styles.cardMember}
+            onPress={() => console.log(setAddFamilyToggle(true))}
+          >
+            <Card.Title
+              title="Create a Family"
+              left={() => {
+                return <Icon source="plus-circle-outline" size={70}></Icon>;
+              }}
+              leftStyle={{
+                height: "70px",
+                width: "70px",
+                marginTop: 15,
+                borderRadius: 10,
+              }}
+              titleStyle={{
+                height: 50,
+                paddingTop: 27,
+                fontSize: 30,
+                fontWeight: "bold",
+              }}
+            />
+          </Card>
+        </>
+      )}
+
+      <Portal>
+        <Dialog
+          visible={addFamilyToggle}
+          onDismiss={() => setAddFamilyToggle(false)}
+        >
+          <Dialog.Icon icon="plus" size={40}></Dialog.Icon>
+          <Dialog.Title alignSelf="center">Create a new family.</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              mode="outlined"
+              label="Family's Name"
+              value={newFamilyName}
+              onChangeText={(newFamilyName) => setNewFamilyName(newFamilyName)}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => {
+                setAddFamilyToggle(false);
+                createFamily.mutate();
+              }}
             >
-              <Card.Title
-                title="Create a Family"
-                left={() => {
-                  return <Icon source="plus-circle-outline" size={70}></Icon>;
-                }}
-                leftStyle={{
-                  height: "70px",
-                  width: "70px",
-                  marginTop: 15,
-                  borderRadius: 10,
-                }}
-                titleStyle={{
-                  height: 50,
-                  paddingTop: 27,
-                  fontSize: 30,
-                  fontWeight: "bold",
-                }}
-              />
-            </Card>
-          </>
-        ) : (
-          <>
-            <Card
-              style={styles.cardMember}
-              onPress={() => console.log(setAddFamilyToggle(true))}
-            >
-              <Card.Title
-                title="Create a Family"
-                left={() => {
-                  return <Icon source="plus-circle-outline" size={70}></Icon>;
-                }}
-                leftStyle={{
-                  height: "70px",
-                  width: "70px",
-                  marginTop: 15,
-                  borderRadius: 10,
-                }}
-                titleStyle={{
-                  height: 50,
-                  paddingTop: 27,
-                  fontSize: 30,
-                  fontWeight: "bold",
-                }}
-              />
-            </Card>
-          </>
-        )}
+              Create
+            </Button>
+            <Button onPress={() => setAddFamilyToggle(false)}>Cancel</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
-        <Portal>
-          <Dialog
-            visible={addFamilyToggle}
-            onDismiss={() => setAddFamilyToggle(false)}
-          >
-            <Dialog.Icon icon="plus" size={40}></Dialog.Icon>
-            <Dialog.Title alignSelf="center">Create a new family.</Dialog.Title>
-            <Dialog.Content>
-              <TextInput
-                mode="outlined"
-                label="Family's Name"
-                value={newFamilyName}
-                onChangeText={(newFamilyName) =>
-                  setNewFamilyName(newFamilyName)
-                }
-              />
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Button
-                onPress={() => {
-                  setAddFamilyToggle(false);
-                  createFamily.mutate();
-                }}
-              >
-                Create
-              </Button>
-              <Button onPress={() => setAddFamilyToggle(false)}>Cancel</Button>
-            </Dialog.Actions>
-          </Dialog>
-
-          <Dialog
-            visible={addMemberToggle}
-            onDismiss={() => setAddMemberToggle(false)}
-          >
-            <Dialog.Title>Invite a member</Dialog.Title>
-            <Dialog.Content>
-              <Text variant="bodyMedium">Enter their email</Text>
-              <TextInput
-                style={styles.field}
-                label="Email"
-                mode="outlined"
-                value={email}
-                onChangeText={(e) => {
-                  setEmail(e);
-                  setInitialState({
-                    ...checkInitialState,
-                    email: false,
-                  });
-                  validateEmail();
-                }}
-                error={emailError}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <View style={styles.helper}>
-                <HelperText type="error">{emailError}</HelperText>
-              </View>
-              <Text variant="bodyMedium">Enter their role</Text>
-              <TextInput
-                style={styles.field}
-                label="Role"
-                mode="outlined"
-                value={role}
-                onChangeText={setRole}
-              />
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Button onPress={() => setAddMemberToggle(false)}>CANCEL</Button>
-              <Button mode="contained" onPress={handleAddMember}>
-                SEND INVITATION
-              </Button>
-            </Dialog.Actions>
-          </Dialog>
-
-          <Dialog visible={addMemberConfirm} onDismiss={hideAddMemberConfirm}>
-            <Dialog.Title>Invite a member</Dialog.Title>
-            <Dialog.Content>
-              <Text variant="bodyMedium">
-                An invitation has been sent. The invitation expires in 30 days.
-              </Text>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Button mode="contained" onPress={hideAddMemberConfirm}>
-                GOT IT
-              </Button>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
-
-        <Portal>
-          <Dialog
-            visible={dialogToggle}
-            onDismiss={() => setDialogToggle(false)}
-          >
-            <Dialog.Icon icon={dialogIcon} size={40}></Dialog.Icon>
-            <Dialog.Title alignSelf="center">{dialogTitle}</Dialog.Title>
-            <Dialog.Content>
-              <Text variant="bodyMedium">{dialogInfo}</Text>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Button onPress={() => setDialogToggle(false)}>Ok</Button>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
-      </ScrollView>
+      <Portal>
+        <Dialog visible={dialogToggle} onDismiss={() => setDialogToggle(false)}>
+          <Dialog.Icon icon={dialogIcon} size={40}></Dialog.Icon>
+          <Dialog.Title alignSelf="center">{dialogTitle}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">{dialogInfo}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDialogToggle(false)}>Ok</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 };
@@ -1060,7 +946,8 @@ const MemberCard = (props) => {
   const user = useUser();
   const queryClient = useQueryClient();
   const theme = useTheme();
-  const myStyles = makeStyles(theme);
+  const styles = makeStyles(theme);
+  const { showActionSheetWithOptions } = useActionSheet();
 
   const [focus, setFocus] = useState(false);
   const [image, setImage] = useState(
@@ -1072,6 +959,7 @@ const MemberCard = (props) => {
   const [isCurrentUser, setIsCurrentUser] = useState(
     props.member.id_member === user.data?.id,
   );
+  const [addMemberType, setAddMemberType] = useState("");
   const [dialogVisible, setDialogVisible] = useState(false);
   const actionSheetRef = useRef(null);
 
@@ -1082,6 +970,113 @@ const MemberCard = (props) => {
     props.member.id_member,
   );
   if (DeleteMember.isError) console.log(error);
+
+  const [email, setEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [checkInitialState, setInitialState] = useState({ email: true });
+  const [addMemberToggle, setAddMemberToggle] = useState(false);
+  const [addMemberConfirm, setAddMemberConfirm] = useState(false);
+  const hideAddMemberConfirm = () => {
+    setAddMemberConfirm(false);
+    setEmail("");
+    setInviteRole("");
+    setInitialState({ ...checkInitialState, email: true });
+  };
+
+  const createInvitation = useCreateInvitation(
+    props.member.id_family,
+    email,
+    inviteRole,
+  );
+  if (createInvitation.isError) console.log(createInvitation.error);
+
+  const handleAddMember = () => {
+    setInitialState({ ...checkInitialState, email: false });
+    if (validateEmail()) {
+      for (const member of props.familyList.data)
+        if (email == member.profiles?.email) {
+          setEmailError("User already in the family");
+          return;
+        }
+      createInvitation.mutate();
+    }
+  };
+
+  const validateEmail = () => {
+    if (!checkInitialState.email) {
+      if (!email) {
+        setEmailError("Enter an email");
+        return false;
+      }
+      if (
+        !/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+          email,
+        )
+      ) {
+        setEmailError("Email a valid email");
+        return false;
+      }
+      setEmailError("");
+      return true;
+    }
+  };
+
+  const showChooseGenerationActionSheet = () => {
+    const options = ["Add Parent", "Add Spouse", "Add Child", "Cancel"];
+    const cancelButtonIndex = 3;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+      },
+      (selectedIndex) => {
+        switch (selectedIndex) {
+          case 0:
+            setAddMemberType("parent");
+            break;
+
+          case 1:
+            setAddMemberType("spouse");
+            break;
+
+          case 2:
+            setAddMemberType("child");
+            break;
+
+          case cancelButtonIndex:
+            break;
+        }
+      },
+    );
+  };
+
+  const showAddMemberActionSheet = () => {
+    const options = ["Add Existing Member", "Invite New Member", "Cancel"];
+    const cancelButtonIndex = 2;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+      },
+      (selectedIndex) => {
+        switch (selectedIndex) {
+          case 0:
+            showChooseGenerationActionSheet();
+            break;
+
+          case 1:
+            setAddMemberToggle(true);
+            break;
+
+          case cancelButtonIndex:
+            break;
+        }
+      },
+    );
+  };
 
   React.useEffect(() => {
     UpdateMemberRole.mutate();
@@ -1100,20 +1095,28 @@ const MemberCard = (props) => {
     setIsCurrentUser(props.member.id_member === user.data?.id);
   }, [user]);
 
+  React.useEffect(() => {
+    if (createInvitation.isSuccess) {
+      setAddMemberToggle(false);
+      setAddMemberConfirm(true);
+    }
+  }, [createInvitation.isSuccess]);
+
   const turnPink = () => {
     return props.member.profiles.gender === "M"
       ? { backgroundColor: "skyblue" }
       : props.member.profiles.gender === "F"
         ? { backgroundColor: "pink" }
-        : { backgroundColor: "white" };
+        : { backgroundColor: theme.colors.surface };
   };
+
   return (
     <>
       <View key={props.member.id_member}>
-        <View style={[myStyles.card, turnPink()]}>
+        <View style={[styles.card, turnPink()]}>
           {image ? (
             <Image
-              style={[myStyles.avatar]}
+              style={[styles.avatar]}
               source={{ uri: props.member.profiles.avatar }}
             />
           ) : (
@@ -1123,29 +1126,29 @@ const MemberCard = (props) => {
             <Switch
               value={role}
               onValueChange={setRole}
-              style={myStyles.switch}
+              style={styles.switch}
             />
           )}
-          <Text style={myStyles.admin}>{role ? "Admin" : ""}</Text>
-          <Text style={myStyles.naming}>
+          <Text style={styles.admin}>{role ? "Admin" : ""}</Text>
+          <Text style={styles.naming}>
             {`${props.member.profiles.first_name} ${props.member.profiles.last_name}`}
           </Text>
-          <Text style={myStyles.famrole}>{props.member.family_role}</Text>
+          <Text style={styles.famrole}>{props.member.family_role}</Text>
           <TouchableOpacity
-            style={props.isAdmin ? myStyles.btn1 : myStyles.btn2}
+            style={props.isAdmin ? styles.btn1 : styles.btn2}
             onPress={() => {}}
           >
             <Icon source="square-edit-outline" size={24} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={props.isAdmin ? myStyles.btn2 : myStyles.btn3}
-            onPress={() => {}}
+            style={props.isAdmin ? styles.btn2 : styles.btn3}
+            onPress={showAddMemberActionSheet}
           >
             <Icon source="plus" size={24} />
           </TouchableOpacity>
           {props.isAdmin && (
             <TouchableOpacity
-              style={myStyles.btn3}
+              style={styles.btn3}
               onPress={() => setDialogVisible(true)}
             >
               <Icon
@@ -1208,6 +1211,64 @@ const MemberCard = (props) => {
             </Dialog.Actions>
           </Dialog>
         )}
+
+        <Dialog
+          visible={addMemberToggle}
+          onDismiss={() => setAddMemberToggle(false)}
+        >
+          <Dialog.Title>Invite a member</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">Enter their email</Text>
+            <TextInput
+              style={styles.field}
+              label="Email"
+              mode="outlined"
+              value={email}
+              onChangeText={(e) => {
+                setEmail(e);
+                setInitialState({
+                  ...checkInitialState,
+                  email: false,
+                });
+                validateEmail();
+              }}
+              error={emailError}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.helper}>
+              <HelperText type="error">{emailError}</HelperText>
+            </View>
+            <Text variant="bodyMedium">Enter their role</Text>
+            <TextInput
+              style={styles.field}
+              label="Role"
+              mode="outlined"
+              value={inviteRole}
+              onChangeText={setInviteRole}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setAddMemberToggle(false)}>CANCEL</Button>
+            <Button mode="contained" onPress={handleAddMember}>
+              SEND INVITATION
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog visible={addMemberConfirm} onDismiss={hideAddMemberConfirm}>
+          <Dialog.Title>Invite a member</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              An invitation has been sent. The invitation expires in 30 days.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button mode="contained" onPress={hideAddMemberConfirm}>
+              GOT IT
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
       </Portal>
     </>
   );
@@ -1222,6 +1283,10 @@ class FamilyTree extends Component {
     return member.children && member.children.length;
   }
 
+  hasSpouse(member) {
+    return member.spouse && member.spouse.id_member;
+  }
+
   renderTree(data, level) {
     return (
       <FlatList
@@ -1231,9 +1296,12 @@ class FamilyTree extends Component {
         keyExtractor={(item, index) => item.id_member}
         listKey={(item, index) => item.id_member}
         initialScrollIndex={0}
+        style={{ flexGrow: 1 }}
         renderItem={({ item, index }) => {
           const { name, avatar } = item;
           const info = { name, avatar };
+          const spouse = this.hasSpouse(item) ? item.spouse : null;
+
           return (
             <View
               style={{
@@ -1251,14 +1319,39 @@ class FamilyTree extends Component {
               >
                 <View
                   style={{
-                    ...this.props.nodeStyle,
                     zIndex: 1,
+                    flexDirection: "row",
+                    alignItems: "center",
                   }}
                 >
-                  <MemberCard member={item} isAdmin={this.props.isAdmin} />
+                  <MemberCard
+                    member={item}
+                    isAdmin={this.props.isAdmin}
+                    familyList={this.props.familyList}
+                  />
+                  {spouse && (
+                    <>
+                      <Svg height="20" width="50">
+                        <Line
+                          x1="0"
+                          y1="50%"
+                          x2="50"
+                          y2="50%"
+                          stroke={this.props.pathColor}
+                          strokeWidth={this.props.strokeWidth}
+                        />
+                      </Svg>
+                      <MemberCard
+                        member={spouse}
+                        isAdmin={this.props.isAdmin}
+                        familyList={this.props.familyList}
+                      />
+                    </>
+                  )}
                 </View>
               </View>
-              {this.hasChildren(item) && (
+              {(this.hasChildren(item) ||
+                (spouse && this.hasChildren(spouse))) && (
                 <Svg height="50" width="20">
                   <Line
                     x1="50%"
@@ -1271,8 +1364,12 @@ class FamilyTree extends Component {
                 </Svg>
               )}
               <View style={{ flexDirection: "row" }}>
-                {this.hasChildren(item) &&
-                  item.children.map((child, index) => {
+                {(this.hasChildren(item) ||
+                  (spouse && this.hasChildren(spouse))) &&
+                  (item.children.length > 0
+                    ? item.children
+                    : spouse.children
+                  ).map((child, index) => {
                     const { name, avatar } = child;
                     const info = { name, avatar };
                     return (
@@ -1293,8 +1390,7 @@ class FamilyTree extends Component {
                               strokeWidth={this.props.strokeWidth}
                             />
                             {/* Right side horizontal line */}
-                            {this.hasChildren(item) &&
-                              item.children.length != 1 &&
+                            {item.children.length != 1 &&
                               item.children.length - 1 !== index && (
                                 <Line
                                   x1="100%"
@@ -1306,27 +1402,23 @@ class FamilyTree extends Component {
                                 />
                               )}
                             {/* Left side horizontal line */}
-                            {this.hasChildren(item) &&
-                              item.children.length != 1 &&
-                              index !== 0 && (
-                                <Line
-                                  x1="50%"
-                                  y1={this.props.strokeWidth / 2}
-                                  x2="0"
-                                  y2={this.props.strokeWidth / 2}
-                                  stroke={this.props.pathColor}
-                                  strokeWidth={this.props.strokeWidth}
-                                />
-                              )}
+                            {item.children.length != 1 && index !== 0 && (
+                              <Line
+                                x1="50%"
+                                y1={this.props.strokeWidth / 2}
+                                x2="0"
+                                y2={this.props.strokeWidth / 2}
+                                stroke={this.props.pathColor}
+                                strokeWidth={this.props.strokeWidth}
+                              />
+                            )}
                           </Svg>
                           {this.renderTree([child], level + 1)}
                         </View>
-                        {}
                         <View
                           style={{
                             height: this.props.strokeWidth,
                             backgroundColor:
-                              this.hasChildren(item) &&
                               item.children.length - 1 !== index
                                 ? this.props.pathColor
                                 : "transparent",
@@ -1349,53 +1441,16 @@ class FamilyTree extends Component {
   }
 
   render() {
-    const { setFamilyTreeWidth, setFamilyTreeHeight } = this.props;
     return (
-      <View
-        style={{ flex: 1 }}
-        onLayout={(event) => {
-          const { x, y, width, height } = event.nativeEvent.layout;
-          setFamilyTreeWidth(width);
-          setFamilyTreeHeight(height);
-        }}
-      >
-        {this.renderTree(this.props.data, 1)}
-      </View>
+      <View style={{ flex: 1 }}>{this.renderTree(this.props.data, 1)}</View>
     );
   }
 }
 
 FamilyTree.defaultProps = {
-  title: "My Family Tree",
-  titleStyle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  titleColor: "black",
   data: [],
-  nodeStyle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    resizeMode: "cover",
-  },
-  nodeTitleStyle: {
-    fontSize: 14,
-    fontWeight: "bold",
-  },
   pathColor: "#00ffd8",
   siblingGap: 50,
-  imageStyle: {
-    width: 70,
-    height: 70,
-    borderRadius: 50,
-    resizeMode: "cover",
-  },
-  nodeTitleColor: "#00ff00",
   familyGap: 30,
   strokeWidth: 5,
 };
@@ -1403,9 +1458,6 @@ FamilyTree.defaultProps = {
 const makeStyles = (theme) =>
   StyleSheet.create({
     container: {
-      flexGrow: 1,
-      alignItems: "center",
-      justifyContent: "center",
       height: "100%",
       width: "100%",
       backgroundColor: theme.colors.secondaryContainer,
