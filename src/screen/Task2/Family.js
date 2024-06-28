@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { Component, useEffect, useState, useRef } from "react";
 import { useQueryClient } from "react-query";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { supabase } from "../../lib/supabase";
 import {
   Alert,
+  Dimensions,
   Keyboard,
   Text,
   View,
+  FlatList,
   StyleSheet,
   ScrollView,
   SafeAreaView,
@@ -26,6 +28,9 @@ import {
   Button,
   useTheme,
 } from "react-native-paper";
+import Svg, { Line } from "react-native-svg";
+import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
+import ActionSheet from "react-native-actions-sheet";
 import useUser from "../../hooks/UserHook/useGetUser";
 import useCreateFamily from "../../hooks/FamilyHook/useCreateFamily";
 import useCreateInvitation from "../../hooks/FamilyHook/useCreateInvitation";
@@ -48,8 +53,6 @@ const Stack = createNativeStackNavigator();
 
 export default Family = ({ family, role, navigation, route }) => {
   const theme = useTheme();
-  const [roleToggle, setRoleToggle] = useState(false);
-  const [manageMember, setManageMember] = useState(false);
   const familyList = useGetFamilyMemberList(family.id_family);
 
   family && role
@@ -57,32 +60,8 @@ export default Family = ({ family, role, navigation, route }) => {
         headerRight: () => (
           <View style={{ flexDirection: "row" }}>
             <IconButton
-              onPress={() => {
-                setManageMember(false);
-                setRoleToggle(!roleToggle);
-              }}
-              mode={roleToggle ? "contained" : "elevated"}
-              icon="crown-outline"
-              style={{ padding: 0, margin: 0 }}
-            />
-            <IconButton
-              onPress={() => {
-                setRoleToggle(false);
-                setManageMember(!manageMember);
-              }}
-              mode={manageMember ? "contained" : "elevated"}
-              icon="minus-circle-outline"
-              style={{ padding: 0, margin: 0 }}
-            />
-            <IconButton
-              onPress={() => navigation.navigate("Family Tree")}
-              icon="family-tree"
-              style={{ padding: 0, margin: 0 }}
-            />
-            <IconButton
               onPress={() => navigation.navigate("Family Settings")}
               icon="cog-outline"
-              style={{ padding: 0, margin: 0 }}
             />
           </View>
         ),
@@ -101,21 +80,9 @@ export default Family = ({ family, role, navigation, route }) => {
           <FamilyMembers
             {...props}
             family={family}
-            roleToggle={roleToggle}
-            manageMemberToggle={manageMember}
+            isAdmin={role}
             familyList={familyList}
           />
-        )}
-      </Stack.Screen>
-      <Stack.Screen
-        name="Family Tree"
-        options={({ navigation, route }) => ({
-          headerStyle: { backgroundColor: theme.colors.primaryContainer },
-          unmountOnBlur: true,
-        })}
-      >
-        {(props) => (
-          <FamilyTree {...props} family={family} familyList={familyList} />
         )}
       </Stack.Screen>
       <Stack.Screen
@@ -134,8 +101,7 @@ export default Family = ({ family, role, navigation, route }) => {
 export const FamilyMembers = ({
   family,
   familyList,
-  roleToggle,
-  manageMemberToggle,
+  isAdmin,
   navigation,
   route,
 }) => {
@@ -165,6 +131,10 @@ export const FamilyMembers = ({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [emailError, setEmailError] = useState("");
+
+  const [familyTree, setFamilyTree] = useState([]);
+  const [familyTreeWidth, setFamilyTreeWidth] = useState(0);
+  const [familyTreeHeight, setFamilyTreeHeight] = useState(0);
 
   const [checkInitialState, setInitialState] = useState({ email: true });
 
@@ -218,50 +188,67 @@ export const FamilyMembers = ({
       setAddMemberConfirm(true);
     }
   }, [createInvitation.isSuccess]);
+
+  React.useEffect(() => {
+    if (familyList && familyList.data && familyList.data.length > 0) {
+      const modifyFamilyData = (familyData) => {
+        const modifiedData = { ...familyData };
+        if (familyData.profiles) {
+          modifiedData.name =
+            familyData.family_role ??
+            `${familyData.profiles.first_name} ${familyData.profiles.last_name}`;
+          modifiedData.avatar = familyData.profiles.avatar;
+        }
+        if (familyData.children && familyData.children.length > 0) {
+          modifiedData.children = familyData.children.map((childId) =>
+            modifyFamilyData(
+              familyList.data.find((child) => child.id_member === childId),
+            ),
+          );
+        }
+        return modifiedData;
+      };
+
+      setFamilyTree(
+        familyList.data
+          .filter(
+            (item) =>
+              !familyList.data.some((member) =>
+                member.children?.includes(item.id_member),
+              ),
+          )
+          .map((item) => modifyFamilyData(item)),
+      );
+    }
+  }, [familyList]);
+
+  useEffect(() => {
+    console.log();
+  }, [familyTree]);
+
   return (
     <SafeAreaView>
       <ScrollView contentContainerStyle={styles.scrollView}>
-        {familyList && familyList.data && familyList.data.length > 0 ? (
-          <>
-            {familyList.data.map((item) => (
-              <MemberCard
-                familyId={item.id_family}
-                memberId={item.id_member}
-                title={
-                  item.family_role && item.family_role !== ""
-                    ? item.family_role
-                    : item.first_name
-                }
-                role={item.role}
-                image={item.profiles.avatar}
-                roleToggle={roleToggle}
-                manageMemberToggle={manageMemberToggle}
-              />
-            ))}
-            <Card
-              style={styles.cardMember}
-              onPress={() => setAddMemberToggle(true)}
-            >
-              <Card.Title
-                title="Add Member"
-                left={() => {
-                  return <Icon source="plus-circle-outline" size={70}></Icon>;
-                }}
-                leftStyle={{
-                  height: "70px",
-                  width: "70px",
-                  marginTop: 15,
-                  borderRadius: 10,
-                }}
-                titleStyle={{
-                  height: 50,
-                  paddingTop: 27,
-                  fontSize: 30,
-                  fontWeight: "bold",
-                }}
-              />
-            </Card>
-          </>
+        {familyTree && familyTree.length > 0 ? (
+          <ReactNativeZoomableView
+            initialZoom={1}
+            minZoom={0.15}
+            maxZoom={10}
+            contentWidth={familyTreeWidth}
+            contentHeight={familyTreeHeight}
+            bindToBorders={false}
+            pinchToZoomInSensitivity={2}
+            pinchToZoomOutSensitivity={2}
+            visualTouchFeedbackEnabled={false}
+            doubleTapZoomToCenter={false}
+          >
+            <FamilyTree
+              data={familyTree}
+              setFamilyTreeWidth={setFamilyTreeWidth}
+              setFamilyTreeHeight={setFamilyTreeHeight}
+              isAdmin={isAdmin}
+            />
+          </ReactNativeZoomableView>
         ) : invitationList &&
           invitationList.data &&
           invitationList.data.length > 0 ? (
@@ -1073,21 +1060,27 @@ const MemberCard = (props) => {
   const user = useUser();
   const queryClient = useQueryClient();
   const theme = useTheme();
-  const styles = makeStyles(theme);
+  const myStyles = makeStyles(theme);
 
   const [focus, setFocus] = useState(false);
   const [image, setImage] = useState(
-    props.image ? `${props.image}?${Date.now()}` : null,
+    props.member.profiles.avatar
+      ? `${props.member.profiles.avatar}?${Date.now()}`
+      : null,
   );
-  const [role, setRole] = useState(props.role);
+  const [role, setRole] = useState(props.member.role);
   const [isCurrentUser, setIsCurrentUser] = useState(
-    props.memberId === user.data?.id,
+    props.member.id_member === user.data?.id,
   );
   const [dialogVisible, setDialogVisible] = useState(false);
+  const actionSheetRef = useRef(null);
 
-  const UpdateMemberRole = useUpdateMemberRole(props.memberId, role);
+  const UpdateMemberRole = useUpdateMemberRole(props.member.id_member, role);
   if (UpdateMemberRole.isError) console.log(error);
-  const DeleteMember = useDeleteMember(props.familyId, props.memberId);
+  const DeleteMember = useDeleteMember(
+    props.member.id_family,
+    props.member.id_member,
+  );
   if (DeleteMember.isError) console.log(error);
 
   React.useEffect(() => {
@@ -1104,82 +1097,66 @@ const MemberCard = (props) => {
   }, [UpdateMemberRole.isSuccess, DeleteMember.isSuccess]);
 
   React.useEffect(() => {
-    setIsCurrentUser(props.memberId === user.data?.id);
+    setIsCurrentUser(props.member.id_member === user.data?.id);
   }, [user]);
 
+  const turnPink = () => {
+    return props.member.profiles.gender === "M"
+      ? { backgroundColor: "skyblue" }
+      : props.member.profiles.gender === "F"
+        ? { backgroundColor: "pink" }
+        : { backgroundColor: "white" };
+  };
   return (
     <>
-      <TouchableOpacity activeOpacity={1} onPress={() => setFocus(!focus)}>
-        <Card style={styles.cardMember}>
-          <Card.Title
-            title={props.title}
-            subtitle={role ? "Admin" : ""}
-            left={() => {
-              if (image)
-                return (
-                  <View>
-                    <ActivityIndicator
-                      animating={true}
-                      style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "100%",
-                        margin: "auto",
-                      }}
-                    />
-                    <Image
-                      source={{ uri: image }}
-                      style={{ height: 70, width: 70, zIndex: 1 }}
-                    />
-                  </View>
-                );
-              else return <Icon source="account" size={70}></Icon>;
-            }}
-            leftStyle={{
-              height: "70px",
-              width: "70px",
-              marginTop: 15,
-              borderRadius: 10,
-            }}
-            right={() => {
-              if (props.roleToggle)
-                return (
-                  !isCurrentUser && (
-                    <Switch value={role} onValueChange={setRole} />
-                  )
-                );
-              if (props.manageMemberToggle)
-                return (
-                  <Button
-                    mode="text"
-                    textColor={theme.colors.error}
-                    onPress={() => setDialogVisible(true)}
-                  >
-                    {isCurrentUser ? "LEAVE" : "REMOVE"}
-                  </Button>
-                );
-              else if (isCurrentUser && focus)
-                return (
-                  <Button
-                    mode="text"
-                    textColor={theme.colors.error}
-                    onPress={() => setDialogVisible(true)}
-                  >
-                    LEAVE
-                  </Button>
-                );
-            }}
-            rightStyle={{ marginTop: 15 }}
-            titleStyle={{
-              height: 50,
-              paddingTop: 25,
-              fontSize: 30,
-              fontWeight: "bold",
-            }}
-            subtitleStyle={{ height: 30, paddingTop: 5, fontSize: 20 }}
-          />
-        </Card>
-      </TouchableOpacity>
+      <View key={props.member.id_member}>
+        <View style={[myStyles.card, turnPink()]}>
+          {image ? (
+            <Image
+              style={[myStyles.avatar]}
+              source={{ uri: props.member.profiles.avatar }}
+            />
+          ) : (
+            <Icon source="account" size={100} />
+          )}
+          {props.isAdmin && !isCurrentUser && (
+            <Switch
+              value={role}
+              onValueChange={setRole}
+              style={myStyles.switch}
+            />
+          )}
+          <Text style={myStyles.admin}>{role ? "Admin" : ""}</Text>
+          <Text style={myStyles.naming}>
+            {`${props.member.profiles.first_name} ${props.member.profiles.last_name}`}
+          </Text>
+          <Text style={myStyles.famrole}>{props.member.family_role}</Text>
+          <TouchableOpacity
+            style={props.isAdmin ? myStyles.btn1 : myStyles.btn2}
+            onPress={() => {}}
+          >
+            <Icon source="square-edit-outline" size={24} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={props.isAdmin ? myStyles.btn2 : myStyles.btn3}
+            onPress={() => {}}
+          >
+            <Icon source="plus" size={24} />
+          </TouchableOpacity>
+          {props.isAdmin && (
+            <TouchableOpacity
+              style={myStyles.btn3}
+              onPress={() => setDialogVisible(true)}
+            >
+              <Icon
+                source="trash-can-outline"
+                size={24}
+                color={theme.colors.error}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
 
       <Portal>
         {isCurrentUser ? (
@@ -1213,7 +1190,10 @@ const MemberCard = (props) => {
             <Dialog.Title>Remove Member</Dialog.Title>
             <Dialog.Content>
               <Text variant="bodyMedium">
-                Are you sure you want to remove {props.title} from the family?
+                Are you sure you want to remove{" "}
+                {props.member.family_role ??
+                  `${props.member.profiles.first_name} ${props.member.profiles.last_name}`}{" "}
+                from the family?
               </Text>
             </Dialog.Content>
             <Dialog.Actions>
@@ -1233,150 +1213,191 @@ const MemberCard = (props) => {
   );
 };
 
-const FamilyTree = ({ family, familyList, navigation, route }) => {
-  const theme = useTheme();
-  const styles = makeStyles(theme);
+class FamilyTree extends Component {
+  constructor(props) {
+    super(props);
+  }
 
-  const user = useUser();
+  hasChildren(member) {
+    return member.children && member.children.length;
+  }
 
-  const [nodes, setNodes] = useState(familyList.data);
-  const firstNodeId = nodes[0].id_member;
-  const [rootId, setRootId] = useState(firstNodeId);
-  const [hoverId, setHoverId] = useState("");
-  const [selectId, setSelectId] = useState("");
-
-  const selected = React.useMemo(
-    () => nodes.find((item) => item.id === selectId),
-    [nodes, selectId],
-  );
-  const resetRootHandler = React.useCallback(
-    () => setRootId(firstNodeId),
-    [firstNodeId],
-  );
-
-  // When the keyboard is hidden, dismiss it instead
-  React.useEffect(() => {
-    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-      Keyboard.dismiss();
-    });
-
-    return () => hideSubscription.remove();
-  }, []);
-
-  // Hide Drawer header when on Family Settings
-  React.useLayoutEffect(() => {
-    if (!navigation || !route) return;
-
-    // Get parent by id
-    const drawerNavigator = navigation.getParent("Drawer");
-
-    if (drawerNavigator) {
-      if (route.name === "Family Settings") {
-        drawerNavigator.setOptions({
-          headerShown: false,
-        });
-      }
-    }
-
-    // Turn header back on when unmount
-    return drawerNavigator
-      ? () =>
-          drawerNavigator.setOptions({
-            headerShown: true,
-          })
-      : undefined;
-  }, [navigation, route]);
-
-  return (
-    <SafeAreaView>
-      <Text>Family Tree</Text>
-      <ReactFamilyTree
-        nodes={nodes}
-        rootId={rootId}
-        renderNode={(node) => (
-          <FamilyNode
-            key={node.id_member}
-            node={node}
-            isRoot={node.id_member === rootId}
-            isHover={node.id === hoverId}
-            onClick={setSelectId}
-            onSubClick={setRootId}
-          />
-        )}
+  renderTree(data, level) {
+    return (
+      <FlatList
+        data={data}
+        horizontal={true}
+        contentContainerStyle={{ padding: 50 }}
+        keyExtractor={(item, index) => item.id_member}
+        listKey={(item, index) => item.id_member}
+        initialScrollIndex={0}
+        renderItem={({ item, index }) => {
+          const { name, avatar } = item;
+          const info = { name, avatar };
+          return (
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingLeft: this.props.siblingGap / 2,
+                paddingRight: this.props.siblingGap / 2,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  style={{
+                    ...this.props.nodeStyle,
+                    zIndex: 1,
+                  }}
+                >
+                  <MemberCard member={item} isAdmin={this.props.isAdmin} />
+                </View>
+              </View>
+              {this.hasChildren(item) && (
+                <Svg height="50" width="20">
+                  <Line
+                    x1="50%"
+                    y1="0"
+                    x2="50%"
+                    y2="150"
+                    stroke={this.props.pathColor}
+                    strokeWidth={this.props.strokeWidth}
+                  />
+                </Svg>
+              )}
+              <View style={{ flexDirection: "row" }}>
+                {this.hasChildren(item) &&
+                  item.children.map((child, index) => {
+                    const { name, avatar } = child;
+                    const info = { name, avatar };
+                    return (
+                      <View
+                        key={child.id_member}
+                        style={{
+                          flexDirection: "row",
+                        }}
+                      >
+                        <View>
+                          <Svg height="50" width="100%">
+                            <Line
+                              x1="50%"
+                              y1="0"
+                              x2="50%"
+                              y2="100%"
+                              stroke={this.props.pathColor}
+                              strokeWidth={this.props.strokeWidth}
+                            />
+                            {/* Right side horizontal line */}
+                            {this.hasChildren(item) &&
+                              item.children.length != 1 &&
+                              item.children.length - 1 !== index && (
+                                <Line
+                                  x1="100%"
+                                  y1={this.props.strokeWidth / 2}
+                                  x2="50%"
+                                  y2={this.props.strokeWidth / 2}
+                                  stroke={this.props.pathColor}
+                                  strokeWidth={this.props.strokeWidth}
+                                />
+                              )}
+                            {/* Left side horizontal line */}
+                            {this.hasChildren(item) &&
+                              item.children.length != 1 &&
+                              index !== 0 && (
+                                <Line
+                                  x1="50%"
+                                  y1={this.props.strokeWidth / 2}
+                                  x2="0"
+                                  y2={this.props.strokeWidth / 2}
+                                  stroke={this.props.pathColor}
+                                  strokeWidth={this.props.strokeWidth}
+                                />
+                              )}
+                          </Svg>
+                          {this.renderTree([child], level + 1)}
+                        </View>
+                        {}
+                        <View
+                          style={{
+                            height: this.props.strokeWidth,
+                            backgroundColor:
+                              this.hasChildren(item) &&
+                              item.children.length - 1 !== index
+                                ? this.props.pathColor
+                                : "transparent",
+                            width:
+                              this.hasChildren(child) &&
+                              child.children.length - 1 !== index
+                                ? level * this.props.familyGap
+                                : 0,
+                          }}
+                        />
+                      </View>
+                    );
+                  })}
+              </View>
+            </View>
+          );
+        }}
       />
-      {rootId !== firstNodeId && (
-        <Button onClick={resetRootHandler}>Reset</Button>
-      )}
-      {selected && (
-        <NodeDetails
-          node={selected}
-          className={css.details}
-          onSelect={setSelectId}
-          onHover={setHoverId}
-          onClear={() => setHoverId(undefined)}
-        />
-      )}
-    </SafeAreaView>
-  );
-};
+    );
+  }
 
-const FamilyNode = ({ node, isRoot, isHover, onClick, onSubClick }) => {
-  const clickHandler = React.useCallback(
-    () => onClick(node.id_member),
-    [node.id_member, onClick],
-  );
-  const clickSubHandler = React.useCallback(
-    () => onSubClick(node.id_member),
-    [node.id_member, onSubClick],
-  );
+  render() {
+    const { setFamilyTreeWidth, setFamilyTreeHeight } = this.props;
+    return (
+      <View
+        style={{ flex: 1 }}
+        onLayout={(event) => {
+          const { x, y, width, height } = event.nativeEvent.layout;
+          setFamilyTreeWidth(width);
+          setFamilyTreeHeight(height);
+        }}
+      >
+        {this.renderTree(this.props.data, 1)}
+      </View>
+    );
+  }
+}
 
-  return (
-    <>
-      <TouchableOpacity onClick={clickHandler}>
-        <Text>{node.id_member}</Text>
-      </TouchableOpacity>
-      {node.hasSubTree && <div onClick={clickSubHandler} />}
-    </>
-  );
-};
-
-const NodeDetails = ({ node, onSelect, onHover, onClear }) => {
-  const closeHandler = useCallback(() => props.onSelect(undefined), [props]);
-
-  return (
-    <>
-      <Text>{node.id_member}</Text>
-      <Button onClick={closeHandler}>&#10005;</Button>
-      <Relations {...props} title="Parents" items={node.parents} />
-      <Relations {...props} title="Children" items={node.children} />
-      <Relations {...props} title="Siblings" items={node.siblings} />
-      <Relations {...props} title="Spouses" items={node.spouses} />
-    </>
-  );
-};
-
-const Relations = ({ title, items, onSelect, onHover, onClear }) => {
-  const selectHandler = useCallback((id) => () => onSelect(id), [onSelect]);
-  const hoverHandler = useCallback((id) => () => onHover(id), [onHover]);
-  const clearHandler = useCallback(() => onClear(), [onClear]);
-
-  if (!items.length) return null;
-
-  return (
-    <>
-      <Text>{title}</Text>
-      {items.map((item, idx) => (
-        <TouchableOpacity
-          key={idx}
-          onClick={selectHandler(item.id)}
-          onMouseEnter={hoverHandler(item.id)}
-          onMouseLeave={clearHandler}
-        >
-          {item.id} ({item.type})
-        </TouchableOpacity>
-      ))}
-    </>
-  );
+FamilyTree.defaultProps = {
+  title: "My Family Tree",
+  titleStyle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  titleColor: "black",
+  data: [],
+  nodeStyle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    resizeMode: "cover",
+  },
+  nodeTitleStyle: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  pathColor: "#00ffd8",
+  siblingGap: 50,
+  imageStyle: {
+    width: 70,
+    height: 70,
+    borderRadius: 50,
+    resizeMode: "cover",
+  },
+  nodeTitleColor: "#00ff00",
+  familyGap: 30,
+  strokeWidth: 5,
 };
 
 const makeStyles = (theme) =>
@@ -1419,5 +1440,92 @@ const makeStyles = (theme) =>
       minHeight: StyleVariable.accessibilityMinTargetSize,
       marginTop: 20,
       alignSelf: "stretch",
+    },
+    body: {
+      flex: 1,
+      backgroundColor: "#3a5561",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    zoomable: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      width: "100%",
+    },
+    card: {
+      height: 140,
+      width: 300,
+      justifyContent: "center",
+      alignContent: "center",
+      borderRadius: 6,
+    },
+    avatar: {
+      height: 100,
+      width: 100,
+      left: 10,
+    },
+    switch: {
+      left: 125,
+      top: 0,
+      position: "absolute",
+    },
+    admin: {
+      color: "#3a5561",
+      fontSize: 10,
+      left: 175,
+      top: 17.5,
+      position: "absolute",
+    },
+    naming: {
+      color: "#3a5561",
+      fontSize: 20,
+      left: 125,
+      position: "absolute",
+      top: 40,
+    },
+    famrole: {
+      position: "absolute",
+      color: "#3a5561",
+      fontSize: 20,
+      left: 125,
+      top: 70,
+    },
+    btn1: {
+      height: 24,
+      width: 24,
+      position: "absolute",
+      left: 180,
+      top: 108,
+    },
+    btn2: {
+      height: 24,
+      width: 24,
+      position: "absolute",
+      top: 108,
+      left: 220,
+    },
+    btn3: {
+      height: 24,
+      width: 24,
+      position: "absolute",
+      top: 108,
+      left: 260,
+    },
+    upper: {
+      height: "60%",
+      backgroundColor: "#DDD",
+      opacity: 0.5,
+    },
+    lower: {
+      flex: 1,
+      backgroundColor: "white",
+    },
+    gender: {
+      position: "absolute",
+      left: "25%",
+    },
+    generation: {
+      height: "40%",
     },
   });
