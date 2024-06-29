@@ -1078,10 +1078,12 @@ const MemberCard = (props) => {
     if (member.id_member === targetMember.id_member) {
       return true;
     }
+    var descendantCheck = false;
     if (targetMember.children && targetMember.children.length > 0)
       for (let i = 0; i < targetMember.children.length; i++)
-        return isDescendant(member, targetMember.children[i]);
-    return false;
+        descendantCheck =
+          descendantCheck || isDescendant(member, targetMember.children[i]);
+    return descendantCheck;
   };
 
   const showChooseGenerationActionSheet = () => {
