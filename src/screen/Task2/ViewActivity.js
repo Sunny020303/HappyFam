@@ -110,7 +110,11 @@ export default ViewActivity = ({ route, navigation, family }) => {
         </View>
       ),
     });
-    if (isFocus) activity.refetch();
+    if (isFocus) 
+      {
+        activity.refetch();
+        memberList.refetch();
+      }
     if (!isFocus) {
       deleteActivity.reset();
       setImage("No image");

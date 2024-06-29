@@ -119,14 +119,21 @@ const LogIn = () => {
       paddingHorizontal: Padding.p_5xl,
       paddingVertical: Padding.p_xs,
     },
-    formContent: { paddingHorizontal: Padding.p_3xs, alignItems: "center" },
+    formContent: {
+      paddingHorizontal: Padding.p_3xs,
+      alignItems: "center",
+      height: "100%",
+    },
     helper: { padding: Padding.p_9xs },
     field: {
       paddingVertical: Padding.p_9xs,
       backgroundColor: "transparent",
       marginTop: 8,
     },
-    credentials: { marginTop: 20, alignSelf: "stretch" },
+    credentials: {
+      marginTop: 20,
+      alignSelf: "stretch",
+    },
     button: {
       minWidth: StyleVariable.accessibilityMinBtnWidth,
       minHeight: StyleVariable.accessibilityMinTargetSize,
@@ -134,6 +141,12 @@ const LogIn = () => {
       alignSelf: "stretch",
     },
     signUp: { marginVertical: 20, flexDirection: "row" },
+    mainView: {
+      height: "100%",
+      width: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+    }
   });
 
   return (
@@ -142,79 +155,88 @@ const LogIn = () => {
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text variant="headlineMedium" style={{ textAlign: "center" }}>
-        Welcome back to HappyFam!
-      </Text>
-      <ScrollView
-        style={styles.credentials}
-        keyboardShouldPersistTaps="handled"
-      >
-        <TextInput
-          style={styles.field}
-          label="Email"
-          mode="outlined"
-          value={email}
-          onChangeText={(e) => {
-            setEmail(e);
-            setInitialState({ ...checkInitialState, email: false });
-            validateLogin();
-          }}
-          error={loginErrors.email}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <View style={styles.helper}>
-          <HelperText type="error">{loginErrors.email}</HelperText>
-        </View>
-        <TextInput
-          style={styles.field}
-          label="Password"
-          mode="outlined"
-          right={
-            <TextInput.Icon
-              icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
-              onPress={() => setSecureTextEntry(!secureTextEntry)}
-            />
-          }
-          secureTextEntry={secureTextEntry}
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={password}
-          onChangeText={(e) => {
-            setPassword(e);
-            setInitialState({ ...checkInitialState, password: false });
-            validateLogin();
-          }}
-          error={loginErrors.password}
-        />
-        <View style={styles.helper}>
-          <HelperText type="error">{loginErrors.password}</HelperText>
-        </View>
-      </ScrollView>
-      <TouchableRipple style={{ marginTop: 20 }} onPress={showForgotPassword}>
-        <Text style={{ color: theme.colors.link }}>Forgot password?</Text>
-      </TouchableRipple>
-      <Button
-        style={styles.button}
-        uppercase
-        mode="contained"
-        onPress={handleLogIn}
-        contentStyle={styles.buttonContent}
-        loading={loading}
-        disabled={loading}
-      >
-        {loading ? "Logging in..." : "Log in"}
-      </Button>
-      <View style={styles.signUp}>
-        <Text style={{ color: theme.colors.onSurfaceVariant }}>
-          Don’t have an account?
+      <View style={styles.mainView}>
+
+
+        <Text variant="headlineMedium" style={{ textAlign: "center" }}>
+          Welcome back to HappyFam!
         </Text>
-        <TouchableRipple
-          style={{ marginLeft: 5 }}
-          onPress={() => navigation.navigate("SignUp")}
-        >
-          <Text style={{ color: theme.colors.link }}>Sign up!</Text>
+        <View style={{height: 250, width: "100%"}}>
+
+
+          <ScrollView
+            style={styles.credentials}
+            keyboardShouldPersistTaps="handled"
+          >
+            <TextInput
+              style={styles.field}
+              label="Email"
+              mode="outlined"
+              value={email}
+              onChangeText={(e) => {
+                setEmail(e);
+                setInitialState({ ...checkInitialState, email: false });
+                validateLogin();
+              }}
+              error={loginErrors.email}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.helper}>
+              <HelperText type="error">{loginErrors.email}</HelperText>
+            </View>
+            <TextInput
+              style={styles.field}
+              label="Password"
+              mode="outlined"
+              right={
+                <TextInput.Icon
+                  icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
+                  onPress={() => setSecureTextEntry(!secureTextEntry)}
+                />
+              }
+              secureTextEntry={secureTextEntry}
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={password}
+              onChangeText={(e) => {
+                setPassword(e);
+                setInitialState({ ...checkInitialState, password: false });
+                validateLogin();
+              }}
+              error={loginErrors.password}
+            />
+            <View style={styles.helper}>
+              <HelperText type="error">{loginErrors.password}</HelperText>
+            </View>
+          </ScrollView>
+        </View>
+        <TouchableRipple style={{ marginTop: 20 }} onPress={showForgotPassword}>
+          <Text style={{ color: theme.colors.link }}>Forgot password?</Text>
         </TouchableRipple>
+        <Button
+          style={styles.button}
+          uppercase
+          mode="contained"
+          onPress={handleLogIn}
+          contentStyle={styles.buttonContent}
+          loading={loading}
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Log in"}
+        </Button>
+        <View style={styles.signUp}>
+          <Text style={{ color: theme.colors.onSurfaceVariant }}>
+            Don’t have an account?
+          </Text>
+          <TouchableRipple
+            style={{ marginLeft: 5 }}
+            onPress={() => navigation.navigate("SignUp")}
+          >
+            <Text style={{ color: theme.colors.link }}>Sign up!</Text>
+          </TouchableRipple>
+        </View>
+
       </View>
       <Portal>
         <Dialog visible={forgotPassword} onDismiss={hideForgotPassword}>

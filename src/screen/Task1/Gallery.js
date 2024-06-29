@@ -11,6 +11,10 @@ import * as Sharing from "expo-sharing";
 import { supabase } from "../../lib/supabase";
 import * as MediaLibrary from "expo-media-library";
 import * as FileSystem from "expo-file-system";
+import { Dimensions } from 'react-native';
+
+const screenWidth = Dimensions.get('window').width;
+
 
 export default Gallery = () => {
   const [currentImageIndex, setImageIndex] = useState(0);
@@ -156,7 +160,10 @@ export default Gallery = () => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, marginTop: 10, marginLeft: 5, alignItems: "flex-start" },
+  root: { 
+    flex: 1, 
+    alignItems: "flex-start",
+  },
   container: {
     backgroundColor: "#00000077",
     flex: 1,
@@ -174,8 +181,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-around",
   },
-  listRoot: { flexGrow: 0 },
+  listRoot: { 
+    flexGrow: 0 ,
+    width: "100%",
+    marginLeft: 10,
+    marginTop: 10,
+    marginBottom: 10,
+  },
   listContainer: { flex: 0 },
   button: { marginRight: 10, zIndex: 1 },
-  image: { width: 120, height: 120, borderRadius: 10, marginBottom: 10 },
+  image: { 
+    width: screenWidth/3-13, 
+    height: screenWidth/3-13, 
+    borderRadius: 10, 
+    marginBottom: 10, 
+  },
 });

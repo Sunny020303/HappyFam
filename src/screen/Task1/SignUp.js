@@ -153,7 +153,11 @@ const SignUp = () => {
       paddingHorizontal: Padding.p_5xl,
       paddingVertical: Padding.p_xs,
     },
-    formContent: { paddingHorizontal: Padding.p_3xs, alignItems: "center" },
+    formContent: { 
+      paddingHorizontal: Padding.p_3xs, 
+      alignItems: "center",
+      height: "100%" 
+    },
     helper: { padding: Padding.p_9xs },
     field: {
       paddingVertical: Padding.p_9xs,
@@ -169,6 +173,12 @@ const SignUp = () => {
       alignSelf: "stretch",
     },
     logIn: { marginVertical: 20, flexDirection: "row" },
+    mainView: {
+      height: "100%",
+      width: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+    }
   });
 
   const pickImage = async () => {
@@ -206,131 +216,140 @@ const SignUp = () => {
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text variant="headlineMedium">Welcome to HappyFam!</Text>
-      <TouchableRipple
-        style={{ marginTop: 20 }}
-        onPress={showDialog}
-        disabled={loading}
-      >
-        {image ? (
-          <Avatar.Image source={{ uri: image }} />
-        ) : (
-          <Avatar.Icon
-            color={theme.colors.primary}
-            style={styles.avatar}
-            icon="camera-outline"
-          />
-        )}
-      </TouchableRipple>
-      <ScrollView
-        style={styles.credentials}
-        keyboardShouldPersistTaps="handled"
-      >
-        <TextInput
-          style={styles.field}
-          label="First name"
-          mode="outlined"
-          value={firstName}
-          onChangeText={(e) => {
-            setFirstName(e);
-            validateSignUp();
-          }}
-          onBlur={() => {
-            setInitialState({ ...checkInitialState, firstName: false });
-            validateSignUp();
-          }}
-          error={signUpErrors.firstName}
-        />
-        <View style={styles.helper}>
-          <HelperText type="error">{signUpErrors.firstName}</HelperText>
-        </View>
-        <TextInput
-          style={styles.field}
-          label="Last name"
-          mode="outlined"
-          value={lastName}
-          onChangeText={(e) => {
-            setLastName(e);
-            validateSignUp();
-          }}
-          onBlur={() => {
-            setInitialState({ ...checkInitialState, lastName: false });
-            validateSignUp();
-          }}
-          error={signUpErrors.lastName}
-        />
-        <View style={styles.helper}>
-          <HelperText type="error">{signUpErrors.lastName}</HelperText>
-        </View>
-        <TextInput
-          style={styles.field}
-          label="Email"
-          mode="outlined"
-          value={email}
-          onChangeText={(e) => {
-            setEmail(e);
-            validateSignUp();
-          }}
-          onBlur={() => {
-            setInitialState({ ...checkInitialState, email: false });
-            validateSignUp();
-          }}
-          error={signUpErrors.email}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <View style={styles.helper}>
-          <HelperText type="error">{signUpErrors.email}</HelperText>
-        </View>
-        <TextInput
-          style={styles.field}
-          label="Password"
-          mode="outlined"
-          right={
-            <TextInput.Icon
-              icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
-              onPress={() => setSecureTextEntry(!secureTextEntry)}
-            />
-          }
-          secureTextEntry={secureTextEntry}
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={password}
-          onChangeText={(e) => {
-            setPassword(e);
-            validateSignUp();
-          }}
-          onBlur={() => {
-            setInitialState({ ...checkInitialState, password: false });
-            validateSignUp();
-          }}
-          error={signUpErrors.password}
-        />
-        <View style={styles.helper}>
-          <HelperText type="error">{signUpErrors.password}</HelperText>
-        </View>
-      </ScrollView>
-      <Button
-        style={styles.button}
-        uppercase
-        mode="contained"
-        contentStyle={styles.buttonContent}
-        onPress={handleSignUp}
-        loading={loading}
-        disabled={loading}
-      >
-        {loading ? "Creating account..." : "Create account"}
-      </Button>
-      <View style={styles.logIn}>
-        <Text>Already have an account?</Text>
+      <View style={styles.mainView}>
+
+        <Text variant="headlineMedium">Welcome to HappyFam!</Text>
         <TouchableRipple
-          style={{ marginLeft: 5 }}
-          onPress={() => navigation.navigate("LogIn")}
+          style={{ marginTop: 20 }}
+          onPress={showDialog}
           disabled={loading}
         >
-          <Text style={{ color: theme.colors.link }}>Log in</Text>
+          {image ? (
+            <Avatar.Image source={{ uri: image }} />
+          ) : (
+            <Avatar.Icon
+              color={theme.colors.primary}
+              style={styles.avatar}
+              icon="camera-outline"
+            />
+          )}
         </TouchableRipple>
+        <View style={{height: 500, width: "100%"}}>
+
+        <ScrollView
+          style={styles.credentials}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TextInput
+            style={styles.field}
+            label="First name"
+            mode="outlined"
+            value={firstName}
+            onChangeText={(e) => {
+              setFirstName(e);
+              validateSignUp();
+            }}
+            onBlur={() => {
+              setInitialState({ ...checkInitialState, firstName: false });
+              validateSignUp();
+            }}
+            error={signUpErrors.firstName}
+          />
+          <View style={styles.helper}>
+            <HelperText type="error">{signUpErrors.firstName}</HelperText>
+          </View>
+          <TextInput
+            style={styles.field}
+            label="Last name"
+            mode="outlined"
+            value={lastName}
+            onChangeText={(e) => {
+              setLastName(e);
+              validateSignUp();
+            }}
+            onBlur={() => {
+              setInitialState({ ...checkInitialState, lastName: false });
+              validateSignUp();
+            }}
+            error={signUpErrors.lastName}
+          />
+          <View style={styles.helper}>
+            <HelperText type="error">{signUpErrors.lastName}</HelperText>
+          </View>
+          <TextInput
+            style={styles.field}
+            label="Email"
+            mode="outlined"
+            value={email}
+            onChangeText={(e) => {
+              setEmail(e);
+              validateSignUp();
+            }}
+            onBlur={() => {
+              setInitialState({ ...checkInitialState, email: false });
+              validateSignUp();
+            }}
+            error={signUpErrors.email}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.helper}>
+            <HelperText type="error">{signUpErrors.email}</HelperText>
+          </View>
+          <TextInput
+            style={styles.field}
+            label="Password"
+            mode="outlined"
+            right={
+              <TextInput.Icon
+                icon={secureTextEntry ? "eye-off-outline" : "eye-outline"}
+                onPress={() => setSecureTextEntry(!secureTextEntry)}
+              />
+            }
+            secureTextEntry={secureTextEntry}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={password}
+            onChangeText={(e) => {
+              setPassword(e);
+              validateSignUp();
+            }}
+            onBlur={() => {
+              setInitialState({ ...checkInitialState, password: false });
+              validateSignUp();
+            }}
+            error={signUpErrors.password}
+          />
+          <View style={styles.helper}>
+            <HelperText type="error">{signUpErrors.password}</HelperText>
+          </View>
+        </ScrollView>
+        </View>
+        <Button
+          style={styles.button}
+          uppercase
+          mode="contained"
+          contentStyle={styles.buttonContent}
+          onPress={handleSignUp}
+          loading={loading}
+          disabled={loading}
+        >
+          {loading ? "Creating account..." : "Create account"}
+        </Button>
+        <View style={styles.logIn}>
+          <Text>Already have an account?</Text>
+          <TouchableRipple
+            style={{ marginLeft: 5 }}
+            onPress={() => navigation.navigate("LogIn")}
+            disabled={loading}
+          >
+            <Text style={{ color: theme.colors.link }}>Log in</Text>
+          </TouchableRipple>
+        </View>
+
       </View>
+
+
       <Portal>
         <Dialog visible={dialogVisible} onDismiss={hideDialog}>
           <Dialog.Title>Upload profile picture</Dialog.Title>

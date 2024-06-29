@@ -3,11 +3,14 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, SafeAreaView, ScrollView } from "react-native";
 import { Card, Icon, useTheme } from "react-native-paper";
 import { Dimensions } from "react-native";
+import { useQueryClient } from "react-query";
+
 const screenWidth = Dimensions.get("window").width;
 
 export default function Home({ navigation }) {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const queryClient = useQueryClient()
 
   return (
     <SafeAreaView style={{ width: "100%", height: "100%" }}>
@@ -20,7 +23,13 @@ export default function Home({ navigation }) {
               backgroundColor: theme.colors.surface,
             }}
           >
-            <Card.Title title="Graph here!" />
+            <Card.Cover
+              source={{ uri: queryClient.getQueryData('Family').family.image ? `${queryClient.getQueryData('Family').family.image}?${new Date().getTime()}` : 'https://kjaxnzwdduwomszumzbf.supabase.co/storage/v1/object/public/activityPics/public/Family-default.jpg' }}
+              
+            >
+            </Card.Cover>
+            <Card.Title title={queryClient.getQueryData('Family').family.name} titleStyle={{ fontSize: 30, fontWeight: "bold", paddingTop: 15 }}
+            ></Card.Title>
           </Card>
 
           <Card
