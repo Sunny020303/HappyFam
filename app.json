@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "HappyFam",
-    "slug": "HappyFam",
+    "slug": "happyfam",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -19,11 +21,21 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.sunny_nguyen.happyfam"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "com.supabase"
+    "scheme": "com.supabase",
+    "extra": {
+      "eas": {
+        "projectId": "c2ea9cef-e80a-4a6c-9415-6c9102725440"
+      }
+    },
+    "owner": "sunny_nguyen",
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

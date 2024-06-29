@@ -193,11 +193,7 @@ function AppContent() {
                 headerStyle: {
                   backgroundColor: theme.colors.primaryContainer,
                 },
-                headerRight: () => (
-                  <View style={{ flexDirection: "row" }}>
-                    <IconButton icon="check" />
-                  </View>
-                ),
+                
                 drawerIcon: ({ color, size, focused }) => (
                   <Icon
                     source={focused ? "home" : "home-outline"}
@@ -322,6 +318,9 @@ function AppContent() {
             <DrawerNav.Screen
               name="View Activity"
               options={({ navigation, route }) => ({
+                headerStyle: {
+                  backgroundColor: theme.colors.primaryContainer,
+                },
                 drawerItemStyle: { display: "none" },
               })}
             >
@@ -361,7 +360,10 @@ function AppContent() {
           <Stack.Screen
             name="SignUp"
             component={SignUp}
-            options={({ navigation, route }) => ({ title: null })}
+            options={({ navigation, route }) => ({ 
+              title: null ,
+              headerShown: false,
+            })}
           />
           <Stack.Screen
             headerBackVisible={false}
@@ -370,6 +372,7 @@ function AppContent() {
             options={({ navigation, route }) => ({
               title: null,
               headerBackVisible: false,
+              headerShown: false,
             })}
           />
         </Stack.Navigator>
