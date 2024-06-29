@@ -961,6 +961,7 @@ const MemberCard = (props) => {
     props.member.id_member === user.data?.id,
   );
   const [addMemberType, setAddMemberType] = useState("");
+  const [removeMemberType, setRemoveMemberType] = useState("");
   const [dialogVisible, setDialogVisible] = useState(false);
   const actionSheetRef = useRef(null);
 
@@ -991,6 +992,8 @@ const MemberCard = (props) => {
     selectedList: [],
   });
   const [addRelationshipToggle, setAddRelationshipToggle] = useState(false);
+  const [removeRelationshipToggle, setRemoveRelationshipToggle] =
+    useState(false);
 
   const createInvitation = useCreateInvitation(
     props.member.id_family,
@@ -999,21 +1002,25 @@ const MemberCard = (props) => {
   );
   if (createInvitation.isError) console.log(createInvitation.error);
 
-  const [targetMember, setTargetMember] = useState("");
-  const [targetSpouse, setTargetSpouse] = useState("");
-  const [targetChildren, setTargetChildren] = useState([]);
+  const [targetMember, setTargetMember] = useState(null);
+  const [targetSpouse, setTargetSpouse] = useState(null);
+  const [targetChildren, setTargetChildren] = useState(null);
   const updateChildren = useUpdateChildren(targetMember, targetChildren);
   if (updateChildren.isError) {
     console.log(updateChildren.error);
-    setTargetMember("");
-    setTargetChildren([]);
+    setAddMemberType("");
+    setRemoveMemberType("");
+    setTargetMember(null);
+    setTargetChildren(null);
     setAddRelationshipToggle(false);
   }
   const updateSpouse = useUpdateSpouse(targetMember, targetSpouse);
   if (updateSpouse.isError) {
     console.log(updateSpouse.error);
-    setTargetMember("");
-    setTargetSpouse("");
+    setAddMemberType("");
+    setRemoveMemberType("");
+    setTargetMember(null);
+    setTargetSpouse(null);
     setAddRelationshipToggle(false);
   }
 
@@ -1086,7 +1093,7 @@ const MemberCard = (props) => {
     return descendantCheck;
   };
 
-  const showChooseGenerationActionSheet = () => {
+  const showChooseGenerationToAddActionSheet = () => {
     const modifiedFamilyList = props.familyList.data.map((item) =>
       modifyFamilyData(item, false),
     );
@@ -1124,6 +1131,22 @@ const MemberCard = (props) => {
         )
       );
     });
+    const potentialSpouseList = potentialMemberList.filter((member) => {
+      return !(
+        member.spouse ||
+        modifiedFamilyList.some(
+          (item) => item.spouse?.id_member === member.id_member,
+        )
+      );
+    });
+    const potentialChildList = potentialMemberList.filter((member) => {
+      return !props.familyList.data.some((family) => {
+        return family.children?.some(
+          (child) => child.id_member === member.id_member,
+        );
+      });
+    });
+
     const hasSpouse =
       props.member.spouse ||
       modifiedFamilyList.some(
@@ -1139,11 +1162,11 @@ const MemberCard = (props) => {
       options.push("Add Parent");
       parentIndex = index++;
     }
-    if (!hasSpouse && potentialMemberList.length > 0) {
+    if (!hasSpouse && potentialSpouseList.length > 0) {
       options.push("Add Spouse");
       spouseIndex = index++;
     }
-    if (potentialMemberList.length > 0) {
+    if (potentialChildList.length > 0) {
       options.push("Add Child");
       childIndex = index++;
     }
@@ -1192,11 +1215,98 @@ const MemberCard = (props) => {
       (selectedIndex) => {
         switch (selectedIndex) {
           case 0:
-            showChooseGenerationActionSheet();
+            showChooseGenerationToAddActionSheet();
             break;
 
           case 1:
             setAddMemberToggle(true);
+            break;
+
+          case cancelButtonIndex:
+            break;
+        }
+      },
+    );
+  };
+
+  const showChooseGenerationToRemoveActionSheet = () => {
+    const modifiedFamilyList = props.familyList.data.map((item) =>
+      modifyFamilyData(item, false),
+    );
+
+    const hasChildren =
+      props.member.children && props.member.children.length > 0;
+
+    const hasSpouse =
+      props.member.spouse ||
+      modifiedFamilyList.some(
+        (member) => member.spouse?.id_member === props.member.id_member,
+      );
+
+    var index = 0;
+    var spouseIndex = -1;
+    var childIndex = -1;
+    var options = [];
+    if (hasSpouse) {
+      options.push("Remove Spouse");
+      spouseIndex = index++;
+    }
+    if (hasChildren) {
+      options.push("Remove A Child");
+      childIndex = index++;
+    }
+    options.push("Cancel");
+    const cancelButtonIndex = index;
+
+    showActionSheetWithOptions(
+      {
+        message:
+          cancelButtonIndex === 0
+            ? `${props.member.profiles.first_name} ${props.member.profiles.last_name} does not have any relationship`
+            : "",
+        options,
+        cancelButtonIndex,
+      },
+      (selectedIndex) => {
+        switch (selectedIndex) {
+          case spouseIndex:
+            setRemoveMemberType("spouse");
+            break;
+
+          case childIndex:
+            setRemoveMemberType("child");
+            break;
+
+          case cancelButtonIndex:
+            break;
+        }
+      },
+    );
+  };
+
+  const showRemoveMemberActionSheet = () => {
+    const options = [
+      "Remove Member From Family",
+      "Remove A Relationship",
+      "Cancel",
+    ];
+    const destructiveButtonIndex = 0;
+    const cancelButtonIndex = 2;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        destructiveButtonIndex,
+      },
+      (selectedIndex) => {
+        switch (selectedIndex) {
+          case destructiveButtonIndex:
+            setDialogVisible(true);
+            break;
+
+          case 1:
+            showChooseGenerationToRemoveActionSheet();
             break;
 
           case cancelButtonIndex:
@@ -1257,6 +1367,23 @@ const MemberCard = (props) => {
       default:
         break;
     }
+  };
+
+  const handleRemoveChild = () => {
+    const spouse = props.familyList.data.filter(
+      (item) =>
+        item.id_member === props.member.spouse?.id_member ||
+        item.spouse === props.member.id_member,
+    );
+    const children = props.familyList.data
+      .find((member) => member.id_member === props.member.id_member)
+      ?.children.filter((child) => child !== targetChildren);
+    setTargetChildren(children && children.length > 0 ? children : null);
+    setTargetMember(
+      spouse && spouse.length > 0
+        ? spouse[0].id_member
+        : props.member.id_member,
+    );
   };
 
   const turnPink = () => {
@@ -1325,20 +1452,93 @@ const MemberCard = (props) => {
           )
         );
       });
-      setSelectOptions({
-        value: "",
-        list: potentialMemberList.map((member) => ({
-          _id: member.id_member,
-          value: `${member.profiles.first_name} ${member.profiles.last_name}`,
-        })),
-        selectedList: [],
+      const potentialSpouseList = potentialMemberList.filter((member) => {
+        return !(
+          member.spouse ||
+          modifiedFamilyList.some(
+            (item) => item.spouse?.id_member === member.id_member,
+          )
+        );
       });
+      const potentialChildList = potentialMemberList.filter((member) => {
+        return !props.familyList.data.some((family) => {
+          return family.children?.some(
+            (child) => child.id_member === member.id_member,
+          );
+        });
+      });
+      switch (addMemberType) {
+        case "parent":
+          setSelectOptions({
+            value: "",
+            list: potentialMemberList.map((member) => ({
+              _id: member.id_member,
+              value: `${member.profiles.first_name} ${member.profiles.last_name}`,
+            })),
+            selectedList: [],
+          });
+          break;
+        case "spouse":
+          setSelectOptions({
+            value: "",
+            list: potentialSpouseList.map((member) => ({
+              _id: member.id_member,
+              value: `${member.profiles.first_name} ${member.profiles.last_name}`,
+            })),
+            selectedList: [],
+          });
+          break;
+        case "child":
+          setSelectOptions({
+            value: "",
+            list: potentialChildList.map((member) => ({
+              _id: member.id_member,
+              value: `${member.profiles.first_name} ${member.profiles.last_name}`,
+            })),
+            selectedList: [],
+          });
+          break;
+        default:
+          break;
+      }
     }
   }, [addMemberType]);
 
   React.useEffect(() => {
-    if (selectOptions && selectOptions.list && selectOptions.list.length > 0)
-      setAddRelationshipToggle(true);
+    if (removeMemberType) {
+      const modifiedFamilyList = props.familyList.data.map((item) =>
+        modifyFamilyData(item, false),
+      );
+      const childrenList = modifiedFamilyList.filter((item) => {
+        return props.member.children?.some(
+          (child) => child.id_member === item.id_member,
+        );
+      });
+      switch (removeMemberType) {
+        case "spouse":
+          setTargetMember(props.member.spouse.id_member);
+          break;
+        case "child":
+          setSelectOptions({
+            value: "",
+            list: childrenList.map((member) => ({
+              _id: member.id_member,
+              value: `${member.profiles.first_name} ${member.profiles.last_name}`,
+            })),
+            selectedList: [],
+          });
+          break;
+        default:
+          break;
+      }
+    }
+  }, [removeMemberType]);
+
+  React.useEffect(() => {
+    if (selectOptions && selectOptions.list && selectOptions.list.length > 0) {
+      if (addMemberType) setAddRelationshipToggle(true);
+      else if (removeMemberType) setRemoveRelationshipToggle(true);
+    }
   }, [selectOptions]);
 
   React.useEffect(() => {
@@ -1349,6 +1549,10 @@ const MemberCard = (props) => {
       targetChildren.length > 0
     )
       updateChildren.mutate();
+    if (removeMemberType && targetMember) {
+      if (removeMemberType === "spouse") updateSpouse.mutate();
+      else updateChildren.mutate();
+    }
   }, [targetMember, targetChildren]);
 
   React.useEffect(() => {
@@ -1356,12 +1560,12 @@ const MemberCard = (props) => {
   }, [targetSpouse]);
 
   React.useEffect(() => {
-    if (updateChildren.isSuccess) {
+    if (updateChildren.isSuccess && addMemberType) {
       switch (addMemberType) {
         case "parent":
           setAddMemberType("");
-          setTargetMember("");
-          setTargetChildren([]);
+          setTargetMember(null);
+          setTargetChildren(null);
           queryClient.invalidateQueries("FamilyMemberList");
           setAddRelationshipToggle(false);
           break;
@@ -1376,8 +1580,8 @@ const MemberCard = (props) => {
             setAddMemberType("parent");
           } else {
             setAddMemberType("");
-            setTargetMember("");
-            setTargetChildren([]);
+            setTargetMember(null);
+            setTargetChildren(null);
             queryClient.invalidateQueries("FamilyMemberList");
             setAddRelationshipToggle(false);
           }
@@ -1386,14 +1590,27 @@ const MemberCard = (props) => {
           break;
       }
     }
+    if (updateChildren.isSuccess && removeMemberType) {
+      if (removeMemberType === "spouse") updateSpouse.mutate();
+      else if (removeMemberType === "child") {
+        if (targetMember === props.member.id_member) {
+          setRemoveMemberType("");
+          setTargetMember(null);
+          setTargetSpouse(null);
+          setTargetChildren(null);
+          queryClient.invalidateQueries("FamilyMemberList");
+          setRemoveRelationshipToggle(false);
+        } else setTargetMember(props.member.id_member);
+      }
+    }
   }, [updateChildren.isSuccess]);
 
   React.useEffect(() => {
-    if (updateSpouse.isSuccess) {
+    if (updateSpouse.isSuccess && addMemberType) {
       if (targetMember === props.member.id_member) {
         setAddMemberType("");
-        setTargetMember("");
-        setTargetChildren([]);
+        setTargetMember(null);
+        setTargetChildren(null);
         queryClient.invalidateQueries("FamilyMemberList");
         setAddRelationshipToggle(false);
       } else {
@@ -1402,6 +1619,15 @@ const MemberCard = (props) => {
         setTargetMember(newTarget);
         setTargetSpouse(newSpouse);
       }
+    }
+    if (updateSpouse.isSuccess && removeMemberType === "spouse") {
+      if (targetMember === props.member.id_member) {
+        setRemoveMemberType("");
+        setTargetMember(null);
+        setTargetChildren(null);
+        queryClient.invalidateQueries("FamilyMemberList");
+        setRemoveRelationshipToggle(false);
+      } else setTargetMember(props.member.id_member);
     }
   }, [updateSpouse.isSuccess]);
 
@@ -1447,7 +1673,7 @@ const MemberCard = (props) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.btn3}
-                onPress={() => setDialogVisible(true)}
+                onPress={() => showRemoveMemberActionSheet()}
               >
                 <Icon
                   source="trash-can-outline"
@@ -1574,9 +1800,9 @@ const MemberCard = (props) => {
           onDismiss={() => {
             setSelectOptions({ value: "", list: [], selectedList: [] });
             setAddMemberType("");
-            setTargetMember("");
-            setTargetSpouse("");
-            setTargetChildren([]);
+            setTargetMember(null);
+            setTargetSpouse(null);
+            setTargetChildren(null);
             setAddRelationshipToggle(false);
           }}
         >
@@ -1604,9 +1830,9 @@ const MemberCard = (props) => {
               onPress={() => {
                 setSelectOptions({ value: "", list: [], selectedList: [] });
                 setAddMemberType("");
-                setTargetMember("");
-                setTargetSpouse("");
-                setTargetChildren([]);
+                setTargetMember(null);
+                setTargetSpouse(null);
+                setTargetChildren(null);
                 setAddRelationshipToggle(false);
               }}
             >
@@ -1614,6 +1840,55 @@ const MemberCard = (props) => {
             </Button>
             <Button mode="contained" onPress={handleAddRelationship}>
               CREATE RELATIONSHIP
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
+          visible={removeRelationshipToggle}
+          onDismiss={() => {
+            setSelectOptions({ value: "", list: [], selectedList: [] });
+            setRemoveMemberType("");
+            setTargetMember(null);
+            setTargetSpouse(null);
+            setTargetChildren(null);
+            setRemoveRelationshipToggle(false);
+          }}
+        >
+          <Dialog.Title>Remove a child</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">{`Remove a child for ${props.member.profiles.first_name} ${props.member.profiles.last_name}`}</Text>
+            <PaperSelect
+              label="Select member"
+              value={selectOptions.value}
+              arrayList={[...selectOptions.list]}
+              selectedArrayList={selectOptions.selectedList}
+              onSelection={(value) => {
+                setSelectOptions({
+                  ...selectOptions,
+                  value: value.text,
+                  selectedList: value.selectedList,
+                });
+                setTargetChildren(value.selectedList[0]._id);
+              }}
+              multiEnable={false}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => {
+                setSelectOptions({ value: "", list: [], selectedList: [] });
+                setRemoveMemberType("");
+                setTargetMember(null);
+                setTargetSpouse(null);
+                setTargetChildren(null);
+                setRemoveRelationshipToggle(false);
+              }}
+            >
+              CANCEL
+            </Button>
+            <Button mode="contained" onPress={handleRemoveChild}>
+              REMOVE CHILD
             </Button>
           </Dialog.Actions>
         </Dialog>
