@@ -28,6 +28,7 @@ import {
   Button,
   useTheme,
 } from "react-native-paper";
+import { PaperSelect } from "react-native-paper-select";
 import Svg, { Line } from "react-native-svg";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 
@@ -45,6 +46,8 @@ import useDeleteFamily from "../../hooks/FamilyHook/useDeleteFamily";
 import useUpdateMemberRole from "../../hooks/FamilyHook/useUpdateMemberRole";
 import useUpdateMemberFamilyRole from "../../hooks/FamilyHook/useUpdateMemberFamilyRole";
 import useDeleteMember from "../../hooks/FamilyHook/useDeleteMember";
+import useUpdateChildren from "../../hooks/FamilyHook/useUpdateChildren";
+import useUpdateSpouse from "../../hooks/FamilyHook/useUpdateSpouse";
 import * as ImagePicker from "expo-image-picker";
 import ReactFamilyTree from "react-family-tree";
 import { Color, FontSize, Padding, StyleVariable } from "../../GlobalStyles";
@@ -176,18 +179,16 @@ export const FamilyMembers = ({
         filteredData
           .filter(
             (item) =>
-              !filteredData.some((member) =>
-                member.children?.includes(item.id_member),
+              !filteredData.some(
+                (member) =>
+                  member.children?.includes(item.id_member) ||
+                  member.children?.includes(item.spouse),
               ),
           )
           .map((item) => modifyFamilyData(item, false)),
       );
     }
   }, [familyList]);
-
-  useEffect(() => {
-    console.log();
-  }, [familyTree]);
 
   return (
     <SafeAreaView>
@@ -241,7 +242,7 @@ export const FamilyMembers = ({
         <>
           <Card
             style={styles.cardMember}
-            onPress={() => console.log(setAddFamilyToggle(true))}
+            onPress={() => setAddFamilyToggle(true)}
           >
             <Card.Title
               title="Create a Family"
@@ -984,6 +985,13 @@ const MemberCard = (props) => {
     setInitialState({ ...checkInitialState, email: true });
   };
 
+  const [selectOptions, setSelectOptions] = useState({
+    value: "",
+    list: [],
+    selectedList: [],
+  });
+  const [addRelationshipToggle, setAddRelationshipToggle] = useState(false);
+
   const createInvitation = useCreateInvitation(
     props.member.id_family,
     email,
@@ -991,10 +999,28 @@ const MemberCard = (props) => {
   );
   if (createInvitation.isError) console.log(createInvitation.error);
 
+  const [targetMember, setTargetMember] = useState("");
+  const [targetSpouse, setTargetSpouse] = useState("");
+  const [targetChildren, setTargetChildren] = useState([]);
+  const updateChildren = useUpdateChildren(targetMember, targetChildren);
+  if (updateChildren.isError) {
+    console.log(updateChildren.error);
+    setTargetMember("");
+    setTargetChildren([]);
+    setAddRelationshipToggle(false);
+  }
+  const updateSpouse = useUpdateSpouse(targetMember, targetSpouse);
+  if (updateSpouse.isError) {
+    console.log(updateSpouse.error);
+    setTargetMember("");
+    setTargetSpouse("");
+    setAddRelationshipToggle(false);
+  }
+
   const handleAddMember = () => {
     setInitialState({ ...checkInitialState, email: false });
     if (validateEmail()) {
-      for (const member of props.familyList.data)
+      for (const member of props.familyTree)
         if (email == member.profiles?.email) {
           setEmailError("User already in the family");
           return;
@@ -1022,26 +1048,126 @@ const MemberCard = (props) => {
     }
   };
 
+  const modifyFamilyData = (familyData, isSpouse) => {
+    const modifiedData = { ...familyData };
+    if (familyData.profiles) {
+      modifiedData.name =
+        familyData.family_role ??
+        `${familyData.profiles.first_name} ${familyData.profiles.last_name}`;
+      modifiedData.avatar = familyData.profiles.avatar;
+    }
+    if (isSpouse) modifiedData.spouse = null;
+    else if (familyData.spouse) {
+      const spouseItem = props.familyList.data.find(
+        (item) => item.id_member === familyData.spouse,
+      );
+      modifiedData.spouse = modifyFamilyData(spouseItem, true);
+    }
+    if (familyData.children && familyData.children.length > 0) {
+      modifiedData.children = familyData.children.map((childId) =>
+        modifyFamilyData(
+          props.familyList.data.find((child) => child.id_member === childId),
+          false,
+        ),
+      );
+    }
+    return modifiedData;
+  };
+
+  const isDescendant = (member, targetMember) => {
+    if (member.id_member === targetMember.id_member) {
+      return true;
+    }
+    if (targetMember.children && targetMember.children.length > 0)
+      for (let i = 0; i < targetMember.children.length; i++)
+        return isDescendant(member, targetMember.children[i]);
+    return false;
+  };
+
   const showChooseGenerationActionSheet = () => {
-    const options = ["Add Parent", "Add Spouse", "Add Child", "Cancel"];
-    const cancelButtonIndex = 3;
+    const modifiedFamilyList = props.familyList.data.map((item) =>
+      modifyFamilyData(item, false),
+    );
+    const isAChild = modifiedFamilyList.some((member) =>
+      member.children?.some(
+        (child) => child.id_member === props.member.id_member,
+      ),
+    );
+
+    const descendantList = modifiedFamilyList.filter((member) => {
+      return (
+        isDescendant(member, props.member) || isDescendant(props.member, member)
+      );
+    });
+    const potentialMemberList = modifiedFamilyList.filter((member) => {
+      return (
+        !isDescendant(member, props.member) &&
+        !isDescendant(props.member, member) &&
+        !(
+          member.id_member === props.member.spouse?.id_member ||
+          member.spouse?.id_member === props.member.id_member
+        ) &&
+        !member.children?.some(
+          (child) =>
+            child.id_member !== props.member.id_member &&
+            isDescendant(child, props.member),
+        ) &&
+        !descendantList.some((i) =>
+          modifiedFamilyList
+            .filter((item) => {
+              return isDescendant(item, member) || isDescendant(member, item);
+            })
+            .map((index) => index.id_member)
+            .includes(i.id_member),
+        )
+      );
+    });
+    const hasSpouse =
+      props.member.spouse ||
+      modifiedFamilyList.some(
+        (member) => member.spouse?.id_member === props.member.id_member,
+      );
+
+    var index = 0;
+    var parentIndex = -1;
+    var spouseIndex = -1;
+    var childIndex = -1;
+    var options = [];
+    if (!isAChild && potentialMemberList.length > 0) {
+      options.push("Add Parent");
+      parentIndex = index++;
+    }
+    if (!hasSpouse && potentialMemberList.length > 0) {
+      options.push("Add Spouse");
+      spouseIndex = index++;
+    }
+    if (potentialMemberList.length > 0) {
+      options.push("Add Child");
+      childIndex = index++;
+    }
+    options.push("Cancel");
+    const cancelButtonIndex = index;
 
     showActionSheetWithOptions(
       {
+        message:
+          cancelButtonIndex === 0
+            ? `You cannot add any relationship for ${props.member.profiles.first_name} ${props.member.profiles.last_name}`
+            : "",
         options,
         cancelButtonIndex,
       },
       (selectedIndex) => {
         switch (selectedIndex) {
-          case 0:
+          case parentIndex:
             setAddMemberType("parent");
             break;
 
-          case 1:
+          case spouseIndex:
             setAddMemberType("spouse");
             break;
 
-          case 2:
+          case childIndex:
             setAddMemberType("child");
             break;
 
@@ -1078,6 +1204,67 @@ const MemberCard = (props) => {
     );
   };
 
+  const handleAddRelationship = () => {
+    switch (addMemberType) {
+      case "parent":
+        const parentMember = props.familyList.data.find(
+          (member) => member.id_member === targetMember,
+        );
+        parentMember.children
+          ? setTargetChildren([
+              ...parentMember.children,
+              props.member.id_member,
+            ])
+          : setTargetChildren([props.member.id_member]);
+        break;
+      case "spouse":
+        const myChildren = props.familyList.data.find(
+          (member) => member.id_member === props.member.id_member,
+        )?.children;
+        const spouseChildren = props.familyList.data.find(
+          (member) => member.id_member === targetMember,
+        )?.children;
+        if (
+          myChildren &&
+          spouseChildren &&
+          myChildren.length > 0 &&
+          spouseChildren.length > 0
+        ) {
+          setTargetChildren([...myChildren, ...spouseChildren]);
+          setTargetSpouse(props.member.id_member);
+        } else if (myChildren && myChildren.length > 0) {
+          setTargetChildren(myChildren);
+          setTargetSpouse(props.member.id_member);
+        } else if (spouseChildren && spouseChildren.length > 0) {
+          setTargetChildren(spouseChildren);
+          setTargetSpouse(props.member.id_member);
+        } else setTargetSpouse(props.member.id_member);
+        break;
+      case "child":
+        const childMember = props.familyList.data.find(
+          (member) => member.id_member === targetMember,
+        );
+        setTargetMember(props.member.id_member);
+        props.member.children
+          ? setTargetChildren([
+              ...props.member.children.map((child) => child.id_member),
+              childMember.id_member,
+            ])
+          : setTargetChildren([childMember.id_member]);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const turnPink = () => {
+    return props.member.profiles.gender === "M"
+      ? { backgroundColor: "skyblue" }
+      : props.member.profiles.gender === "F"
+        ? { backgroundColor: "pink" }
+        : { backgroundColor: theme.colors.surface };
+  };
+
   React.useEffect(() => {
     UpdateMemberRole.mutate();
   }, [role]);
@@ -1102,13 +1289,119 @@ const MemberCard = (props) => {
     }
   }, [createInvitation.isSuccess]);
 
-  const turnPink = () => {
-    return props.member.profiles.gender === "M"
-      ? { backgroundColor: "skyblue" }
-      : props.member.profiles.gender === "F"
-        ? { backgroundColor: "pink" }
-        : { backgroundColor: theme.colors.surface };
-  };
+  React.useEffect(() => {
+    if (addMemberType) {
+      const modifiedFamilyList = props.familyList.data.map((item) =>
+        modifyFamilyData(item, false),
+      );
+      const descendantList = modifiedFamilyList.filter((member) => {
+        return (
+          isDescendant(member, props.member) ||
+          isDescendant(props.member, member)
+        );
+      });
+      const potentialMemberList = modifiedFamilyList.filter((member) => {
+        return (
+          !isDescendant(member, props.member) &&
+          !isDescendant(props.member, member) &&
+          !(
+            member.id_member === props.member.spouse?.id_member ||
+            member.spouse?.id_member === props.member.id_member
+          ) &&
+          !member.children?.some(
+            (child) =>
+              child.id_member !== props.member.id_member &&
+              isDescendant(child, props.member),
+          ) &&
+          !descendantList.some((i) =>
+            modifiedFamilyList
+              .filter((item) => {
+                return isDescendant(item, member) || isDescendant(member, item);
+              })
+              .map((index) => index.id_member)
+              .includes(i.id_member),
+          )
+        );
+      });
+      setSelectOptions({
+        value: "",
+        list: potentialMemberList.map((member) => ({
+          _id: member.id_member,
+          value: `${member.profiles.first_name} ${member.profiles.last_name}`,
+        })),
+        selectedList: [],
+      });
+    }
+  }, [addMemberType]);
+
+  React.useEffect(() => {
+    if (selectOptions && selectOptions.list && selectOptions.list.length > 0)
+      setAddRelationshipToggle(true);
+  }, [selectOptions]);
+
+  React.useEffect(() => {
+    if (
+      addMemberType &&
+      targetMember &&
+      targetChildren &&
+      targetChildren.length > 0
+    )
+      updateChildren.mutate();
+  }, [targetMember, targetChildren]);
+
+  React.useEffect(() => {
+    if (addMemberType && targetMember && targetSpouse) updateSpouse.mutate();
+  }, [targetSpouse]);
+
+  React.useEffect(() => {
+    if (updateChildren.isSuccess) {
+      switch (addMemberType) {
+        case "parent":
+          setAddMemberType("");
+          setTargetMember("");
+          setTargetChildren([]);
+          queryClient.invalidateQueries("FamilyMemberList");
+          setAddRelationshipToggle(false);
+          break;
+        case "spouse":
+          break;
+        case "child":
+          const spouse = props.familyList.data.find(
+            (member) => member.id_member === targetMember,
+          )?.spouse;
+          if (spouse) {
+            setTargetMember(spouse);
+            setAddMemberType("parent");
+          } else {
+            setAddMemberType("");
+            setTargetMember("");
+            setTargetChildren([]);
+            queryClient.invalidateQueries("FamilyMemberList");
+            setAddRelationshipToggle(false);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }, [updateChildren.isSuccess]);
+
+  React.useEffect(() => {
+    if (updateSpouse.isSuccess) {
+      if (targetMember === props.member.id_member) {
+        setAddMemberType("");
+        setTargetMember("");
+        setTargetChildren([]);
+        queryClient.invalidateQueries("FamilyMemberList");
+        setAddRelationshipToggle(false);
+      } else {
+        const newTarget = targetSpouse;
+        const newSpouse = targetMember;
+        setTargetMember(newTarget);
+        setTargetSpouse(newSpouse);
+      }
+    }
+  }, [updateSpouse.isSuccess]);
 
   return (
     <>
@@ -1134,29 +1427,33 @@ const MemberCard = (props) => {
             {`${props.member.profiles.first_name} ${props.member.profiles.last_name}`}
           </Text>
           <Text style={styles.famrole}>{props.member.family_role}</Text>
-          <TouchableOpacity
-            style={props.isAdmin ? styles.btn1 : styles.btn2}
-            onPress={() => {}}
-          >
-            <Icon source="square-edit-outline" size={24} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={props.isAdmin ? styles.btn2 : styles.btn3}
-            onPress={showAddMemberActionSheet}
-          >
-            <Icon source="plus" size={24} />
-          </TouchableOpacity>
-          {props.isAdmin && (
+          {(props.isAdmin || isCurrentUser) && (
             <TouchableOpacity
-              style={styles.btn3}
-              onPress={() => setDialogVisible(true)}
+              style={props.isAdmin ? styles.btn1 : styles.btn2}
+              onPress={() => {}}
             >
-              <Icon
-                source="trash-can-outline"
-                size={24}
-                color={theme.colors.error}
-              />
+              <Icon source="square-edit-outline" size={24} />
             </TouchableOpacity>
+          )}
+          {props.isAdmin && (
+            <>
+              <TouchableOpacity
+                style={props.isAdmin ? styles.btn2 : styles.btn3}
+                onPress={showAddMemberActionSheet}
+              >
+                <Icon source="plus" size={24} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btn3}
+                onPress={() => setDialogVisible(true)}
+              >
+                <Icon
+                  source="trash-can-outline"
+                  size={24}
+                  color={theme.colors.error}
+                />
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </View>
@@ -1269,6 +1566,55 @@ const MemberCard = (props) => {
             </Button>
           </Dialog.Actions>
         </Dialog>
+
+        <Dialog
+          visible={addRelationshipToggle}
+          onDismiss={() => {
+            setSelectOptions({ value: "", list: [], selectedList: [] });
+            setAddMemberType("");
+            setTargetMember("");
+            setTargetSpouse("");
+            setTargetChildren([]);
+            setAddRelationshipToggle(false);
+          }}
+        >
+          <Dialog.Title>Add a relationship</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">{`Add a ${addMemberType} for ${props.member.profiles.first_name} ${props.member.profiles.last_name}`}</Text>
+            <PaperSelect
+              label="Select member"
+              value={selectOptions.value}
+              arrayList={[...selectOptions.list]}
+              selectedArrayList={selectOptions.selectedList}
+              onSelection={(value) => {
+                setSelectOptions({
+                  ...selectOptions,
+                  value: value.text,
+                  selectedList: value.selectedList,
+                });
+                setTargetMember(value.selectedList[0]._id);
+              }}
+              multiEnable={false}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => {
+                setSelectOptions({ value: "", list: [], selectedList: [] });
+                setAddMemberType("");
+                setTargetMember("");
+                setTargetSpouse("");
+                setTargetChildren([]);
+                setAddRelationshipToggle(false);
+              }}
+            >
+              CANCEL
+            </Button>
+            <Button mode="contained" onPress={handleAddRelationship}>
+              CREATE RELATIONSHIP
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
       </Portal>
     </>
   );
@@ -1327,6 +1673,7 @@ class FamilyTree extends Component {
                   <MemberCard
                     member={item}
                     isAdmin={this.props.isAdmin}
+                    familyTree={this.props.data}
                     familyList={this.props.familyList}
                   />
                   {spouse && (
@@ -1344,6 +1691,7 @@ class FamilyTree extends Component {
                       <MemberCard
                         member={spouse}
                         isAdmin={this.props.isAdmin}
+                        familyTree={this.props.data}
                         familyList={this.props.familyList}
                       />
                     </>
